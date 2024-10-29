@@ -10,9 +10,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.kloc.unistore.navigation.Screen.SchoolDetailsScreen
 import com.kloc.unistore.screens.ProductDetailScreen
+import com.kloc.unistore.screens.ProductScreen
 import com.kloc.unistore.screens.SchoolDetailsScreen
 import com.kloc.unistore.screens.SchoolCategoryScreen
 import com.kloc.unistore.util.Constants.CATEGORY_ID
+import com.kloc.unistore.util.Constants.PRODUCT_ID
 import com.kloc.unistore.util.Constants.SCHOOL_ID
 
 @Composable
@@ -45,7 +47,13 @@ fun NavGraph(
                 ProductDetailScreen(navController = navController, categoryId = categoryId)
             }
         }
-
+        composable(
+            route = Screen.ProductScreen.route,
+            arguments = listOf(navArgument(PRODUCT_ID) { type = NavType.IntType })
+        ) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getInt(PRODUCT_ID) ?: 0
+            ProductScreen(navController = navController, productId = productId)
+        }
     }
 }
 

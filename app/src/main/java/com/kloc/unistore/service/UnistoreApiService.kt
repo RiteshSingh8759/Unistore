@@ -15,6 +15,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import okhttp3.Credentials
 import okhttp3.OkHttpClient
+import retrofit2.http.Path
 
 interface UnistoreApiService {
 
@@ -28,9 +29,14 @@ interface UnistoreApiService {
 
     @GET("products")
     suspend fun getProductsByCategory(
-        @Query("category") categoryId: Int
+        @Query("category") categoryId: Int,
+        @Query("type") type: String
     ): Response<List<Product>>
 
+    @GET("products/{id}")
+    suspend fun getProductById(
+        @Path("id") productId: Int
+    ): Response<Product>
 
     companion object {
         private const val BASE_URL = "https://wordpress-698237-3902553.cloudwaysapps.com/wp-json/wc/v3/"

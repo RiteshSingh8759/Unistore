@@ -9,7 +9,12 @@ import javax.inject.Inject
 class ProductRepository @Inject constructor() {
     private val apiService = UnistoreApiService.create()
     suspend fun fetchProducts(categoryId: Int): List<Product>? {
-        val response = apiService.getProductsByCategory(categoryId)
+        val response = apiService.getProductsByCategory(categoryId,"bundle")
+        return if (response.isSuccessful) response.body() else null
+    }
+
+    suspend fun fetchProductDetailsById(productId: Int): Product? {
+        val response = apiService.getProductById(productId)
         return if (response.isSuccessful) response.body() else null
     }
 }

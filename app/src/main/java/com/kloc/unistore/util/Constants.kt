@@ -8,4 +8,6 @@ object Constants {
     const val SCHOOL_ID = "schoolId"
     const val PRODUCT_DETAILS="Product_details"
     const val CATEGORY_ID = "categoryId"
+    const val PRODUCT_ID = "productId"
+    const val PRODUCT="Product"
 }
