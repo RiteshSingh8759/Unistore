@@ -6,23 +6,24 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import com.kloc.unistore.model.viewModel.MainViewModel
 import com.kloc.unistore.navigation.NavGraph
-import com.kloc.unistore.service.UnistoreApiService
 import com.kloc.unistore.ui.theme.UnistoreTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private lateinit var mainViewModel: MainViewModel
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
             UnistoreTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
@@ -30,8 +31,8 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
-
-                    NavGraph(navController = navController)
+                    val mainViewModel: MainViewModel = viewModel()
+                    NavGraph(navController = navController, mainViewModel)
                 }
             }
         }

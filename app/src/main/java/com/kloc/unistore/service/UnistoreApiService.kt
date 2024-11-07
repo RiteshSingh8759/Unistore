@@ -1,6 +1,7 @@
 package com.kloc.unistore.service
 
 import com.google.gson.GsonBuilder
+import com.kloc.unistore.entity.order.Order
 import com.kloc.unistore.entity.product.DoubleTypeAdapter
 import com.kloc.unistore.entity.product.IntTypeAdapter
 import com.kloc.unistore.entity.product.MetaData
@@ -15,6 +16,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import okhttp3.Credentials
 import okhttp3.OkHttpClient
+import retrofit2.http.Body
+import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface UnistoreApiService {
@@ -37,6 +40,11 @@ interface UnistoreApiService {
     suspend fun getProductById(
         @Path("id") productId: Int
     ): Response<Product>
+
+    @POST("orders")
+    suspend fun createOrder(
+        @Body order: Order
+    ): Response<Order>
 
     companion object {
         private const val BASE_URL = "https://wordpress-698237-3902553.cloudwaysapps.com/wp-json/wc/v3/"
