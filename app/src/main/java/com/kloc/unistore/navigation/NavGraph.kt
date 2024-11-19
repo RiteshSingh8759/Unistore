@@ -23,6 +23,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.kloc.unistore.model.viewModel.MainViewModel
 import com.kloc.unistore.navigation.Screen.SchoolDetailsScreen
@@ -45,6 +46,9 @@ fun NavGraph(
     navController: NavHostController,
     mainViewModel: MainViewModel
 ) {
+    // Observe the current route in the back stack
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -55,10 +59,13 @@ fun NavGraph(
                     }
                 },
                 actions = {
-                    // Icon for Student Details screen
-                    IconButton(onClick = { navController.navigate(Screen.StudentDetailsScreen.route) }) {
-                        Icon(Icons.Default.Person, contentDescription = "Student Details")
+                    // Show the person icon only on the OrderDetailsScreen
+                    if (currentRoute == Screen.OrderDetailsScreen.route) {
+                        IconButton(onClick = { navController.navigate(Screen.StudentDetailsScreen.route) }) {
+                            Icon(Icons.Default.Person, contentDescription = "Student Details")
+                        }
                     }
+                    // Cart icon with badge
                     IconButton(onClick = { navController.navigate(Screen.CartScreen.route) }) {
                         BadgedBox(badge = { Badge { Text(mainViewModel.cartViewModel.cartItems.collectAsState().value.size.toString()) } }) {
                             Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
@@ -69,8 +76,7 @@ fun NavGraph(
         }
     ) { paddingValues ->
         NavHost(navController = navController, startDestination = SchoolDetailsScreen.route, Modifier.padding(paddingValues)) {
-            composable(route = SchoolDetailsScreen.route)
-            {
+            composable(route = SchoolDetailsScreen.route) {
                 SchoolDetailsScreen(navController = navController)
             }
             composable(
@@ -115,9 +121,3 @@ fun NavGraph(
         }
     }
 }
-
-
-
-
-
-

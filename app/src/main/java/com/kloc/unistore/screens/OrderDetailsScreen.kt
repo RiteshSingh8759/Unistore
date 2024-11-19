@@ -1,5 +1,7 @@
 package com.kloc.unistore.screens
 
+import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -47,53 +49,69 @@ import com.kloc.unistore.entity.order.ShippingLine
 import com.kloc.unistore.entity.product.MetaData
 import com.kloc.unistore.model.orderViewModel.OrderViewModel
 import com.kloc.unistore.model.schoolViewModel.SchoolViewModel
+import com.kloc.unistore.model.studentViewModel.StudentViewModel
 import com.kloc.unistore.model.viewModel.MainViewModel
+import com.kloc.unistore.navigation.Screen
 
 @Composable
-fun OrderDetailsScreen(navController: NavController, mainViewModel: MainViewModel) {
-    val orderViewModel: OrderViewModel = hiltViewModel()
-    val schoolViewModel: SchoolViewModel = hiltViewModel()
+fun OrderDetailsScreen(
+    navController: NavController,
+     mainViewModel: MainViewModel,
+    orderViewModel: OrderViewModel = hiltViewModel(),
+    schoolViewModel: SchoolViewModel = hiltViewModel()
+
+) {
     val schoolDetails by schoolViewModel.schoolDetails.collectAsState()
     val cartItems by mainViewModel.cartViewModel.cartItems.collectAsState()
+    val studentDetails by mainViewModel.studentViewModel.studentDetails.collectAsState()
     val totalAmount = cartItems.sumOf { it.product.price * it.quantity }
+    var selectedPaymentType by remember { mutableStateOf("") }
+    var selectedPaymentStatus by remember { mutableStateOf("") }
+    BackHandler {
+        navController.navigate(Screen.CartScreen.route) {
+            // Pop all the backstack to ensure CartScreen is the root
+            popUpTo(Screen.CartScreen.route) { inclusive = true }
+        }
+    }
 
+    Log.d("debug","$studentDetails")
     val order = Order(
-        payment_method = "bacs",
+        payment_method = "$selectedPaymentType",
         payment_method_title = "Direct Bank Transfer",
         set_paid = true,
         billing = Billing(
-            first_name = "John",
-            last_name = "Doe",
-            address_1 = "969 Market",
+            first_name = studentDetails?.studentName?.split(" ")?.getOrNull(0) ?: "John",
+            last_name = studentDetails?.studentName?.split(" ")?.getOrNull(1) ?: "Doe",
+            address_1 = studentDetails?.billingAddress ?: "969 Market",
             address_2 = "",
-            city = "San Francisco",
-            state = "CA",
-            postcode = "94103",
-            country = "US",
-            email = "john.doe@example.com",
-            phone = "(555) 555-5555"
+            city = studentDetails?.city?:"San Francisco",
+            state = studentDetails?.state?:"CA",
+            postcode = studentDetails?.zipCode?:"94103",
+            country = "India",
+            email = studentDetails?.emailAddress?:"john.doe@example.com",
+            phone = studentDetails?.phoneNumber?:"(555) 555-5555"
         ),
         shipping = Shipping(
-            first_name = "John",
-            last_name = "Doe",
-            address_1 = "969 Market",
+            first_name = studentDetails?.studentName?.split(" ")?.getOrNull(0) ?: "John",
+            last_name = studentDetails?.studentName?.split(" ")?.getOrNull(1) ?: "Doe",
+            address_1 = studentDetails?.shipingAddress ?: "969 Market",
             address_2 = "",
-            city = "San Francisco",
-            state = "CA",
-            postcode = "94103",
-            country = "US"
+            city = studentDetails?.city?:"San Francisco",
+            state = studentDetails?.state?:"CA",
+            postcode = studentDetails?.zipCode?:"94103",
+            country = "India"
         ),
         line_items = cartItems.map {
             LineItem(
                 product_id = it.product.id,  // Assuming the product has an `id`
                 quantity = it.quantity,
                 meta_data = listOf(
-                    OrderMetaData(key = "tmcp_textfield_0", value = "Rishab Thejakumar Kaleyanda"),
-                    OrderMetaData(key = "tmcp_textfield_1", value = "Rashmi B Kumbugowdana"),
-                    OrderMetaData(key = "tmcp_textfield_2", value = "XI A"),
-                    OrderMetaData(key = "tmcp_textfield_3", value = schoolDetails?.firstOrNull()?.id?.toString() ?: "Unknown"),
-                    OrderMetaData(key = "tmcp_textfield_4", value = "M_0"),
-                    OrderMetaData(key = "custom_size", value = it.size)
+                    OrderMetaData(key = "Student Name", value = "${studentDetails?.studentName?:""}"),
+                    OrderMetaData(key = "Parent Name", value = "${studentDetails?.parentName?:""}"),
+                    OrderMetaData(key = "New Class", value = "${studentDetails?.selectedClass?:""}"),
+                    OrderMetaData(key = "School ID", value = schoolDetails?.firstOrNull()?.id?.toString() ?: "Unknown"),
+                    OrderMetaData(key = "Gender", value = "${studentDetails?.gender}"),
+                    OrderMetaData(key = "custom_size", value = it.size,)
                 )
             )
         },
@@ -147,7 +165,7 @@ fun OrderDetailsScreen(navController: NavController, mainViewModel: MainViewMode
             modifier = Modifier.padding(bottom = 8.dp)
         )
         Text(
-            text = "123 Street Name, City, State, ZIP",
+            text = studentDetails?.shipingAddress ?: "969 Market",
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -169,8 +187,7 @@ fun OrderDetailsScreen(navController: NavController, mainViewModel: MainViewMode
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            var selectedPaymentType by remember { mutableStateOf("") }
-            var selectedPaymentStatus by remember { mutableStateOf("") }
+
             val paymentTypes = listOf("Credit Card", "Debit Card", "Net Banking", "UPI")
             val paymentStatuses = listOf("Pending", "Completed", "Failed")
 

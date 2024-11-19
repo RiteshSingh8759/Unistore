@@ -38,17 +38,28 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.kloc.unistore.entity.product.Product
+import com.kloc.unistore.model.cartViewModel.CartViewModel
+import com.kloc.unistore.model.studentViewModel.StudentViewModel
+import com.kloc.unistore.model.viewModel.MainViewModel
 import com.kloc.unistore.navigation.Screen
 
 @Composable
 fun ProductDetailScreen(
     navController: NavController,
     categoryId: Int,
-    viewModel: ProductViewModel = hiltViewModel()
+    viewModel: ProductViewModel = hiltViewModel(),
+//    mainViewModel: MainViewModel = hiltViewModel()
 ) {
+    // Clear cart and student details whenever this screen is visited
+//    LaunchedEffect(Unit) {
+//        mainViewModel.cartViewModel.clearCart()
+//        mainViewModel.studentViewModel.clearStudentDetails()
+//        mainViewModel.showToast("Cart and student details cleared.")
+//    }
     // Call the ViewModel to fetch products when the screen is displayed
     LaunchedEffect(categoryId) {
         viewModel.getProducts(categoryId)
+
     }
 
     val products by viewModel.products.collectAsState() // Collecting state
