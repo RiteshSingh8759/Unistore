@@ -44,8 +44,11 @@ import com.kloc.unistore.entity.order.Billing
 import com.kloc.unistore.entity.order.LineItem
 import com.kloc.unistore.entity.order.Order
 import com.kloc.unistore.entity.order.OrderMetaData
+import com.kloc.unistore.entity.order.OrderSize
 import com.kloc.unistore.entity.order.Shipping
 import com.kloc.unistore.entity.order.ShippingLine
+import com.kloc.unistore.entity.order.TmcpPostFields
+import com.kloc.unistore.entity.order.TmcpValue
 import com.kloc.unistore.entity.product.MetaData
 import com.kloc.unistore.model.orderViewModel.OrderViewModel
 import com.kloc.unistore.model.schoolViewModel.SchoolViewModel
@@ -106,12 +109,22 @@ fun OrderDetailsScreen(
                 product_id = it.product.id,  // Assuming the product has an `id`
                 quantity = it.quantity,
                 meta_data = listOf(
-                    OrderMetaData(key = "Student Name", value = "${studentDetails?.studentName?:""}"),
-                    OrderMetaData(key = "Parent Name", value = "${studentDetails?.parentName?:""}"),
-                    OrderMetaData(key = "New Class", value = "${studentDetails?.selectedClass?:""}"),
-                    OrderMetaData(key = "School ID", value = schoolDetails?.firstOrNull()?.id?.toString() ?: "Unknown"),
-                    OrderMetaData(key = "Gender", value = "${studentDetails?.gender}"),
-                    OrderMetaData(key = "custom_size", value = it.size,)
+                    OrderMetaData(
+                        key = "_tmdata",
+                        value = TmcpValue(
+                            tmcp_post_fields = TmcpPostFields(
+                                tmcp_textfield_0 = studentDetails?.studentName.orEmpty(),
+                                tmcp_textfield_1 = studentDetails?.parentName.orEmpty(),
+                                tmcp_textfield_2 = studentDetails?.selectedClass.orEmpty(),
+                                tmcp_textfield_3 = mainViewModel.cartViewModel.cartItems.value[0].product.categories.last().slug,
+                                tmcp_select_4 = studentDetails?.gender.orEmpty()
+                            )
+                        )
+                    ),
+                    OrderSize(
+                        key=it.type,
+                        value=it.size
+                    )
                 )
             )
         },

@@ -6,5 +6,5 @@ data class LineItem(
     val product_id: Int,
     val quantity: Int,
     val variation_id: Int? = null,
-    val meta_data: List<OrderMetaData>
+    val meta_data: List<Any>
 )

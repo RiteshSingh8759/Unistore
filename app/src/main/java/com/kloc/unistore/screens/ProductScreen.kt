@@ -114,6 +114,7 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel) {
     var selectedSize by remember { mutableStateOf(product.attributes.firstOrNull()?.options?.firstOrNull()) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
     var isCustomSizeChecked by remember { mutableStateOf(false) } // Track checkbox state
+    var sizeType by remember { mutableStateOf("")}
 
     Card(
         modifier = Modifier.fillMaxWidth().padding(8.dp),
@@ -233,11 +234,19 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel) {
                 }
                 Button(
                     onClick = {
+                       if(isCustomSizeChecked)
+                       {
+                           sizeType="Custom"
+                       }
+                        else{
+                            sizeType="Size"
+                        }
                         mainViewModel.showToast(
                             mainViewModel.cartViewModel.addToCart(
                                 product,
                                 quantity,
-                                selectedSize
+                                selectedSize,
+                                sizeType
                             )
                         )
                     },

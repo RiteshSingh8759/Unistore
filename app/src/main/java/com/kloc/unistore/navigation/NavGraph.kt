@@ -95,6 +95,8 @@ fun NavGraph(
             ) { backStackEntry ->
                 val categoryId = backStackEntry.arguments?.getInt(CATEGORY_ID)
                 if (categoryId != null) {
+                    mainViewModel.studentViewModel.clearStudentDetails()
+                    mainViewModel.cartViewModel.clearCart()
                     ProductDetailScreen(navController = navController, categoryId = categoryId)
                 }
             }

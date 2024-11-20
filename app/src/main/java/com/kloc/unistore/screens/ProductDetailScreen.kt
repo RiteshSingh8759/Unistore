@@ -48,15 +48,8 @@ fun ProductDetailScreen(
     navController: NavController,
     categoryId: Int,
     viewModel: ProductViewModel = hiltViewModel(),
-//    mainViewModel: MainViewModel = hiltViewModel()
 ) {
-    // Clear cart and student details whenever this screen is visited
-//    LaunchedEffect(Unit) {
-//        mainViewModel.cartViewModel.clearCart()
-//        mainViewModel.studentViewModel.clearStudentDetails()
-//        mainViewModel.showToast("Cart and student details cleared.")
-//    }
-    // Call the ViewModel to fetch products when the screen is displayed
+
     LaunchedEffect(categoryId) {
         viewModel.getProducts(categoryId)
 
