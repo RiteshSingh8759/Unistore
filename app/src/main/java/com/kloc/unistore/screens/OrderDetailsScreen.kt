@@ -39,50 +39,315 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.google.gson.Gson
 import com.kloc.unistore.entity.cart.CartItem
+import com.kloc.unistore.entity.order.Attributes
 import com.kloc.unistore.entity.order.Billing
+import com.kloc.unistore.entity.order.Customer
+import com.kloc.unistore.entity.order.Image
 import com.kloc.unistore.entity.order.LineItem
+import com.kloc.unistore.entity.order.Links
+import com.kloc.unistore.entity.order.MetaDataX
 import com.kloc.unistore.entity.order.Order
 import com.kloc.unistore.entity.order.OrderMetaData
-import com.kloc.unistore.entity.order.OrderSize
+import com.kloc.unistore.entity.order.Self
+import com.kloc.unistore.entity.order.Collection
+import com.kloc.unistore.entity.order.Element
+import com.kloc.unistore.entity.order.MetaDataSubElement
 import com.kloc.unistore.entity.order.Shipping
-import com.kloc.unistore.entity.order.ShippingLine
+import com.kloc.unistore.entity.order.StaffMetaData
+import com.kloc.unistore.entity.order.StampData
+import com.kloc.unistore.entity.order.TMCardEpoData
+import com.kloc.unistore.entity.order.TaxLine
+import com.kloc.unistore.entity.order.Taxe
 import com.kloc.unistore.entity.order.TmcpPostFields
-import com.kloc.unistore.entity.order.TmcpValue
-import com.kloc.unistore.entity.product.MetaData
 import com.kloc.unistore.model.orderViewModel.OrderViewModel
+import com.kloc.unistore.model.productViewModel.ProductViewModel
 import com.kloc.unistore.model.schoolViewModel.SchoolViewModel
-import com.kloc.unistore.model.studentViewModel.StudentViewModel
 import com.kloc.unistore.model.viewModel.MainViewModel
 import com.kloc.unistore.navigation.Screen
 
 @Composable
 fun OrderDetailsScreen(
     navController: NavController,
-     mainViewModel: MainViewModel,
+    mainViewModel: MainViewModel,
+    productViewModel: ProductViewModel,
     orderViewModel: OrderViewModel = hiltViewModel(),
     schoolViewModel: SchoolViewModel = hiltViewModel()
 
 ) {
+    val orderCreatedBy by remember { mutableStateOf("Avinash")  }
     val schoolDetails by schoolViewModel.schoolDetails.collectAsState()
+    val productDetails by productViewModel.productDetails.collectAsState()
     val cartItems by mainViewModel.cartViewModel.cartItems.collectAsState()
     val studentDetails by mainViewModel.studentViewModel.studentDetails.collectAsState()
     val totalAmount = cartItems.sumOf { it.product.price * it.quantity }
+    val totalQuantity=cartItems.sumOf { it.quantity }
     var selectedPaymentType by remember { mutableStateOf("") }
     var selectedPaymentStatus by remember { mutableStateOf("") }
+    val MetaDataMap: HashMap<String, StampData> = hashMapOf()
+
+    Log.d("debug","$productDetails")
     BackHandler {
         navController.navigate(Screen.CartScreen.route) {
             // Pop all the backstack to ensure CartScreen is the root
             popUpTo(Screen.CartScreen.route) { inclusive = true }
         }
     }
-
-    Log.d("debug","$studentDetails")
+    val stampDataMap: Map<String, StampData> = mainViewModel.cartViewModel.cartItems.value?.associateBy(
+        { it.itemId.toString() } // Key: Product ID as String
+    ) { cartItem ->
+        StampData(
+            product_id = cartItem.product.id, // Product ID
+            quantity = cartItem.quantity, // Quantity
+            attributes = Attributes(
+                attribute_class = cartItem.product.categories.firstOrNull()?.name.orEmpty(), // Class name
+                attribute_pa_color = "", // Selected color
+                attribute_pa_size = if (cartItem.type.equals("Size", ignoreCase = true)) cartItem.size else "",
+                attribute_pa_custom_size = if (cartItem.type.equals("Custom", ignoreCase = true)) cartItem.size else ""
+            ),
+            variation_id ="${cartItem.variationId}", // Variation ID
+            discount = "" // Discount
+        )
+    } ?: hashMapOf()
+    val tmCardEpoDataList = listOf(
+        TMCardEpoData(
+            mode = "builder",
+            cssclass = "",
+            hideLabelInCart = "",
+            hideValueInCart = "",
+            hideLabelInOrder = "",
+            hideValueInOrder = "",
+            element = Element(
+                type = "textfield",
+                rules = listOf(listOf("")),
+                rulesType = listOf(listOf("")),
+                _metaDataSubElement = MetaDataSubElement(priceType = false)
+            ),
+            name = "Student Name",
+            value = studentDetails?.studentName.orEmpty(),
+            price = 0,
+            section = "5a4f42259ec412.74128636",
+            sectionLabel = "Student Name",
+            percentCurrentTotal = 0,
+            fixedCurrentTotal = 0,
+            currencies = emptyList(),
+            pricePerCurrency = emptyList(),
+            quantity = 1,
+            keyId = 0,
+            keyValueId = 0
+        ),
+        TMCardEpoData(
+            mode = "builder",
+            cssclass = "",
+            hideLabelInCart = "",
+            hideValueInCart = "",
+            hideLabelInOrder = "",
+            hideValueInOrder = "",
+            element = Element(
+                type = "textfield",
+                rules = listOf(listOf("")),
+                rulesType = listOf(listOf("")),
+                _metaDataSubElement = MetaDataSubElement(priceType = false)
+            ),
+            name = "Parent Name",
+            value = studentDetails?.parentName.orEmpty(),
+            price = 0,
+            section = "5a4f41279132c8.70932947",
+            sectionLabel = "Parent Name",
+            percentCurrentTotal = 0,
+            fixedCurrentTotal = 0,
+            currencies = emptyList(),
+            pricePerCurrency = emptyList(),
+            quantity = 1,
+            keyId = 0,
+            keyValueId = 0
+        ),
+        TMCardEpoData(
+            mode = "builder",
+            cssclass = "",
+            hideLabelInCart = "",
+            hideValueInCart = "",
+            hideLabelInOrder = "",
+            hideValueInOrder = "",
+            element = Element(
+                type = "textfield",
+                rules = listOf(listOf("")),
+                rulesType = listOf(listOf("")),
+                _metaDataSubElement = MetaDataSubElement(priceType = false)
+            ),
+            name = "New Class",
+            value = studentDetails?.selectedClass.orEmpty(),
+            price = 0,
+            section = "5a4f42529ec430.43177555",
+            sectionLabel = "New Class",
+            percentCurrentTotal = 0,
+            fixedCurrentTotal = 0,
+            currencies = emptyList(),
+            pricePerCurrency = emptyList(),
+            quantity = 1,
+            keyId = 0,
+            keyValueId = 0
+        ),
+        TMCardEpoData(
+            mode = "builder",
+            cssclass = "",
+            hideLabelInCart = "",
+            hideValueInCart = "",
+            hideLabelInOrder = "",
+            hideValueInOrder = "",
+            element = Element(
+                type = "textfield",
+                rules = listOf(listOf("")),
+                rulesType = listOf(listOf("")),
+                _metaDataSubElement = MetaDataSubElement(priceType = false)
+            ),
+            name = "School ID",
+            value = mainViewModel.cartViewModel.cartItems.value[0].product.categories.last().slug,
+            price = 0,
+            section = "5a4f423c9ec421.55952783",
+            sectionLabel = "School ID",
+            percentCurrentTotal = 0,
+            fixedCurrentTotal = 0,
+            currencies = emptyList(),
+            pricePerCurrency = emptyList(),
+            quantity = 1,
+            keyId = 0,
+            keyValueId = 0
+        ),
+        TMCardEpoData(
+            mode = "builder",
+            cssclass = "",
+            hideLabelInCart = "",
+            hideValueInCart = "",
+            hideLabelInOrder = "",
+            hideValueInOrder = "",
+            element = Element(
+                type = "select",
+                rules = mapOf("M_0" to listOf(""), "F_1" to listOf("")),
+                rulesType = mapOf("M_0" to listOf(""), "F_1" to listOf("")),
+                _metaDataSubElement = MetaDataSubElement(priceType = false)
+            ),
+            name = "Gender",
+            value = studentDetails?.gender.orEmpty(),
+            price = 0,
+            section = "5a4f427f9ec452.18208379",
+            sectionLabel = "Gender",
+            percentCurrentTotal = 0,
+            fixedCurrentTotal = 0,
+            currencies = emptyList(),
+            pricePerCurrency = emptyList(),
+            quantity = 1,
+            keyId = 0,
+            keyValueId = 0
+        )
+    )
+    val individualLineItems: List<LineItem> = cartItems.map { cartItem ->
+        LineItem(
+            bundled_by = "",
+            bundled_item_title = "",
+            bundled_items = emptyList(),
+            image = Image(
+                src = cartItem.product.images?.firstOrNull()?.src ?: "default_image_url" // Use the `src` from `cartItem.image`
+            ),
+            meta_data = listOf(
+                OrderMetaData(
+                    id = 1,
+                    key = "_bundled_item_id",
+                    value = "${cartItem.itemId}"
+                )
+                ,
+                OrderMetaData(
+                    id = 3,
+                    key = if (cartItem.type == "Custom") "customSize" else "pa_size",
+                    value = "${cartItem.size}"
+                ),
+                OrderMetaData(
+                    id = 3,
+                    key = "_stamp",
+                    value = stampDataMap
+                )
+            ),
+            name = cartItem.product.name,
+            parent_name = studentDetails?.parentName.orEmpty(),
+            price = cartItem.product.price,
+            product_id = cartItem.product.id,
+            quantity = cartItem.quantity,
+            sku = "",
+            subtotal = "0.00",
+            subtotal_tax = "0.00",
+            taxes = listOf(
+                Taxe(
+                    id = 1,
+                    subtotal = "0.00",
+                    total = "0.00"
+                )
+            ),
+            total = "${cartItem.product.price * cartItem.quantity}",
+            total_tax = "0.00",
+            variation_id = cartItem.variationId
+        )
+    }
+    Log.d("debug","$totalAmount")
+    // Convert CartItem to LineItem
+    val lineItems: List<LineItem> = listOf(
+        LineItem(
+            bundled_by = "",
+            bundled_item_title = "",
+            bundled_items = emptyList(),
+            image = Image(
+//                id = cartItem.product.images.first().id,  //  line_items[0][image][id] is not of type integer.
+                src = productViewModel.productDetails.value?.images?.firstOrNull()?.src ?: "default_image_url"
+            ),
+            meta_data = listOf(
+                OrderMetaData(
+                    id = 1,
+                    key = "_tmdata",
+                    value = listOf(
+                        TmcpPostFields(
+                            tmcp_textfield_0 = studentDetails?.studentName.orEmpty(),
+                            tmcp_textfield_1 = studentDetails?.parentName.orEmpty(),
+                            tmcp_textfield_2 = studentDetails?.selectedClass.orEmpty(),
+                            tmcp_textfield_3 = mainViewModel.cartViewModel.cartItems.value[0].product.categories.last().slug,
+                            tmcp_select_4 = studentDetails?.gender.orEmpty()
+                        )
+                    )
+                ),
+                OrderMetaData(
+                    id = 3,
+                    key = "_stamp",
+                    value =stampDataMap
+                ),
+                OrderMetaData(
+                    id = 4,
+                    key = "_tmcartepo_data",
+                    value = tmCardEpoDataList
+                )
+            ),
+            name = productViewModel.productDetails.value?.name?:"Product A",
+            parent_name = studentDetails?.parentName.orEmpty(),
+            price = totalAmount,
+            product_id = productViewModel.productDetails.value?.id ?: 0,  // Set product_id from CartItem
+            quantity = 1,  // Add the total quantity quantity here
+            sku = "",
+            subtotal = "0.00",
+            subtotal_tax = "0.00",
+//            tax_class = "standard",     // Error
+            taxes = listOf(
+                Taxe(
+                    id = 1,
+                    subtotal = "0.00", // Replacing 'amount' with 'subtotal'
+                    total = "0.00"    // Providing a value for 'total'
+                )
+            ),
+            total = "0.0",
+            total_tax = "0.00",
+            variation_id = 0
+        )
+    )
     val order = Order(
-        payment_method = "$selectedPaymentType",
-        payment_method_title = "Direct Bank Transfer",
-        set_paid = true,
-        billing = Billing(
+
+        billing = Billing(                              //TODO: Data Attached
             first_name = studentDetails?.studentName?.split(" ")?.getOrNull(0) ?: "John",
             last_name = studentDetails?.studentName?.split(" ")?.getOrNull(1) ?: "Doe",
             address_1 = studentDetails?.billingAddress ?: "969 Market",
@@ -90,11 +355,53 @@ fun OrderDetailsScreen(
             city = studentDetails?.city?:"San Francisco",
             state = studentDetails?.state?:"CA",
             postcode = studentDetails?.zipCode?:"94103",
-            country = "India",
             email = studentDetails?.emailAddress?:"john.doe@example.com",
-            phone = studentDetails?.phoneNumber?:"(555) 555-5555"
+            phone = studentDetails?.phoneNumber?:"(555) 555-5555",
+            country = "India",                          //TODO: Hard-coded
+            company = "Kloc Technologies",              //TODO: Hard-coded
         ),
-        shipping = Shipping(
+        cart_hash = "abc123",
+        cart_tax = "5.00",
+        coupon_lines = emptyList(),
+        created_via = "web",
+        currency = "INR",
+        currency_symbol = "₹",
+        customer_id = 101,
+        customer_ip_address = "192.168.1.1",
+        customer_note = "Leave at the front door.",
+        customer_user_agent = "",
+        date_completed = null,
+        date_completed_gmt = null,
+        date_created = "2024-11-21T10:00:00Z",
+        date_created_gmt = "2024-11-21T10:00:00Z",
+        date_modified = "2024-11-22T12:00:00Z",
+        date_modified_gmt = "2024-11-22T12:00:00Z",
+        date_paid = "2024-11-21T10:15:00Z",
+        date_paid_gmt = "2024-11-21T10:15:00Z",
+        discount_tax = "0.00",
+        discount_total = "10.00",
+        fee_lines = emptyList(),
+//        id = 1001,
+        is_editable = false,
+        line_items = lineItems+individualLineItems,
+        meta_data = listOf(
+            MetaDataX(
+                id = 1,
+                key = "",
+                value = ""
+            )
+        ),
+        needs_payment = false,
+        needs_processing = true,
+        number = "ORD12345",
+        order_key = "orderkey123",
+        parent_id = 0,
+        payment_method = selectedPaymentType,                //TODO:  Payment Method Attached
+        payment_method_title = "Direct Bank Transfer",       //TODO: Hard-Coded
+        payment_url = "https://payment.example.com",
+        prices_include_tax = true,
+        refunds = emptyList(),
+        shipping = Shipping(                                //TODO: Data Attached
             first_name = studentDetails?.studentName?.split(" ")?.getOrNull(0) ?: "John",
             last_name = studentDetails?.studentName?.split(" ")?.getOrNull(1) ?: "Doe",
             address_1 = studentDetails?.shipingAddress ?: "969 Market",
@@ -102,41 +409,32 @@ fun OrderDetailsScreen(
             city = studentDetails?.city?:"San Francisco",
             state = studentDetails?.state?:"CA",
             postcode = studentDetails?.zipCode?:"94103",
-            country = "India"
+            phone = studentDetails?.phoneNumber?:"(555) 555-5555",
+            country = "India",                              //TODO: Hard-Coded
+            company = "Kloc Technologies",                  //TODO: Hard-Coded
         ),
-        line_items = cartItems.map {
-            LineItem(
-                product_id = it.product.id,  // Assuming the product has an `id`
-                quantity = it.quantity,
-                meta_data = listOf(
-                    OrderMetaData(
-                        key = "_tmdata",
-                        value = TmcpValue(
-                            tmcp_post_fields = TmcpPostFields(
-                                tmcp_textfield_0 = studentDetails?.studentName.orEmpty(),
-                                tmcp_textfield_1 = studentDetails?.parentName.orEmpty(),
-                                tmcp_textfield_2 = studentDetails?.selectedClass.orEmpty(),
-                                tmcp_textfield_3 = mainViewModel.cartViewModel.cartItems.value[0].product.categories.last().slug,
-                                tmcp_select_4 = studentDetails?.gender.orEmpty()
-                            )
-                        )
-                    ),
-                    OrderSize(
-                        key=it.type,
-                        value=it.size
-                    )
-                )
+        shipping_lines = emptyList(),
+        shipping_tax = "0.00",
+        shipping_total = "5.00",
+        status = "completed",
+        tax_lines = listOf(
+            TaxLine(
+                compound = false,
+                id = 1,
+                label = "Tax",
+                meta_data = emptyList(),
+                rate_code = "TAX_5",
+                rate_id = 101,
+                rate_percent = 5.0,
+                shipping_tax_total = "0.00",
+                tax_total = "1.25"
             )
-        },
-        shipping_lines = listOf(
-            ShippingLine(
-                method_id = "flat_rate",
-                method_title = "Flat Rate",
-                total = "10.00"
-            )
-        )
+        ),
+        total = "$totalAmount",
+        total_tax = "1.25",
+        transaction_id = "txn12345",
+        version = "1.0"
     )
-
 
     Column(
         modifier = Modifier

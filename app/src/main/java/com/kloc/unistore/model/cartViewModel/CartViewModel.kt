@@ -14,14 +14,14 @@ class CartViewModel @Inject constructor() : ViewModel() {
     private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
     val cartItems: StateFlow<List<CartItem>> = _cartItems
 
-    fun addToCart(product: Product, quantity: Int, selectedSize: String?,sizeType: String): String {
+    fun addToCart(product: Product, quantity: Int, selectedSize: String?,sizeType: String,variationId:Int,itemId:Int): String {
         val existingItem = _cartItems.value.find {
             it.product.id == product.id && it.size == selectedSize
         }
         return if (existingItem != null) {
             "Product with the selected size already exists in the cart."
         } else {
-            _cartItems.value = _cartItems.value + CartItem(product, quantity, sizeType,selectedSize?:"")
+            _cartItems.value = _cartItems.value + CartItem(product, quantity, sizeType,itemId,variationId,selectedSize?:"")
             "Product added to cart."
         }.also {
             // Trigger state update regardless
@@ -50,3 +50,6 @@ class CartViewModel @Inject constructor() : ViewModel() {
         _cartItems.value = emptyList()
     }
 }
+
+
+

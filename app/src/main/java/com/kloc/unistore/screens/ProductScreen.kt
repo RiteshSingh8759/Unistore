@@ -50,28 +50,40 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.layout.ContentScale
 import com.kloc.unistore.model.cartViewModel.CartViewModel
+import com.kloc.unistore.model.orderViewModel.OrderViewModel
 import com.kloc.unistore.model.viewModel.MainViewModel
 
 @Composable
 fun ProductScreen(
     navController: NavController,
     productId: Int,
-    viewModel: ProductViewModel = hiltViewModel(),
+    viewModel: ProductViewModel,
     mainViewModel: MainViewModel
 ) {
     // State to collect the list of bundled products
     val bundledProducts by viewModel.bundledProducts.collectAsState(initial = emptyList())
     val productDetails by viewModel.productDetails.collectAsState()
+    var productItemMap: HashMap<Int, Int> = hashMapOf()
+
 
     // Fetch product details using the productId
     LaunchedEffect(productId) {
         viewModel.fetchProductDetailsById(productId) // Fetch product details by ID
+
     }
 
     // Use LaunchedEffect to fetch bundled products when product details are available
     LaunchedEffect(productDetails) {
         productDetails?.let { product ->
             val bundledProductIds = product.bundled_items.map { it.product_id }
+            // Iterate over the bundled_items list and populate the HashMap
+            product.bundled_items.forEach { item ->
+                val productId = item.product_id // Replace with the actual way to fetch productId from 'item'
+                val itemId = item.bundled_item_id       // Replace with the actual way to fetch itemId from 'item'
+
+                // If the productId is already in the map, append the new itemId to the existing list
+                productItemMap[productId] = itemId
+            }
             viewModel.fetchBundledProducts(bundledProductIds) // Fetch bundled products
         }
     }
@@ -101,7 +113,7 @@ fun ProductScreen(
         // Display bundled products
         LazyColumn {
             items(bundledProducts) { bundledProduct ->
-                ProductCard(product = bundledProduct, mainViewModel) // Show each fetched bundled product
+                ProductCard(product = bundledProduct, mainViewModel,productItemMap) // Show each fetched bundled product
             }
         }
     }
@@ -109,19 +121,26 @@ fun ProductScreen(
 
 
 @Composable
-fun ProductCard(product: Product, mainViewModel: MainViewModel) {
+fun ProductCard(product: Product, mainViewModel: MainViewModel,productItemMap:HashMap<Int,Int>) {
     var quantity by remember { mutableStateOf(0) }
     var selectedSize by remember { mutableStateOf(product.attributes.firstOrNull()?.options?.firstOrNull()) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
     var isCustomSizeChecked by remember { mutableStateOf(false) } // Track checkbox state
     var sizeType by remember { mutableStateOf("")}
+    var variationId by remember { mutableStateOf(0)}
+    var itemId by remember { mutableStateOf(0)}
+    var index by remember { mutableStateOf(0)}
 
     Card(
-        modifier = Modifier.fillMaxWidth().padding(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+        Column(modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 val imageUrl = product.images.firstOrNull()?.src ?: ""
                 AsyncImage(
@@ -166,7 +185,10 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel) {
                     Box {
                         Text(
                             text = selectedSize ?: "Select",
-                            modifier = Modifier.clickable { isDropdownExpanded = true }.background(Color.LightGray, shape = RoundedCornerShape(4.dp)).padding(8.dp),
+                            modifier = Modifier
+                                .clickable { isDropdownExpanded = true }
+                                .background(Color.LightGray, shape = RoundedCornerShape(4.dp))
+                                .padding(8.dp),
                             color = Color.DarkGray
                         )
 
@@ -175,6 +197,7 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel) {
                                 attribute.options.forEach { size ->
                                     DropdownMenuItem(onClick = {
                                         selectedSize = size
+                                        index=attribute.options.indexOf(selectedSize)
                                         isDropdownExpanded = false
                                     }) {
                                         Text(text = size)
@@ -198,7 +221,10 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel) {
                         value = selectedSize?:"",
                         onValueChange = { selectedSize = it },
                         label = { Text("Enter Custom Size") },
-                        modifier = Modifier.height(56.dp).fillMaxWidth().padding(8.dp)
+                        modifier = Modifier
+                            .height(56.dp)
+                            .fillMaxWidth()
+                            .padding(8.dp)
                     )
                 }
             }
@@ -234,23 +260,30 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel) {
                 }
                 Button(
                     onClick = {
-                       if(isCustomSizeChecked)
-                       {
-                           sizeType="Custom"
-                       }
+                        if(isCustomSizeChecked)
+                        {
+                            sizeType="Custom"
+                            variationId=0
+                        }
                         else{
                             sizeType="Size"
+                            variationId = product.variations.getOrElse(index) { 0 } .toString().toDouble().toInt()
                         }
+                        itemId= productItemMap[product.id]!!
                         mainViewModel.showToast(
                             mainViewModel.cartViewModel.addToCart(
                                 product,
                                 quantity,
                                 selectedSize,
-                                sizeType
+                                sizeType,
+                                variationId,
+                                itemId
                             )
                         )
                     },
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE)),
                     enabled = quantity > 0
                 ) {

@@ -4,6 +4,7 @@ data class Billing(
     val address_1: String,
     val address_2: String,
     val city: String,
+    val company: String,
     val country: String,
     val email: String,
     val first_name: String,

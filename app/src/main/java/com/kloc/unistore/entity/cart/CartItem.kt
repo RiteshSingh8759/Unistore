@@ -6,5 +6,8 @@ data class CartItem(
     val product: Product,
     var quantity: Int = 1, // Default quantity is 1
     var type:String="",
-    var size: String = ""
-)
+    var itemId: Int=0,
+    var variationId: Int = 0,
+    var size: String = "",
+
+    )

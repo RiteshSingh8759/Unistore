@@ -3,10 +3,14 @@ package com.kloc.unistore.model.orderViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kloc.unistore.entity.order.Order
+import com.kloc.unistore.entity.product.Product
 import com.kloc.unistore.repository.order.OrderRepository
+import com.kloc.unistore.repository.product.ProductRepository
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 @HiltViewModel
 class OrderViewModel @Inject constructor(
@@ -23,6 +27,7 @@ class OrderViewModel @Inject constructor(
             }
         }
     }
+
 }
 
 

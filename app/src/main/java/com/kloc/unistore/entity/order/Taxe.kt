@@ -1,4 +1,4 @@
-package com.kloc.unistore.entity.NewOrder
+package com.kloc.unistore.entity.order
 
 data class Taxe(
     val id: Int,

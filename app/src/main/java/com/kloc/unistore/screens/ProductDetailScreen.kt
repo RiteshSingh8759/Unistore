@@ -47,7 +47,7 @@ import com.kloc.unistore.navigation.Screen
 fun ProductDetailScreen(
     navController: NavController,
     categoryId: Int,
-    viewModel: ProductViewModel = hiltViewModel(),
+    viewModel: ProductViewModel,
 ) {
 
     LaunchedEffect(categoryId) {

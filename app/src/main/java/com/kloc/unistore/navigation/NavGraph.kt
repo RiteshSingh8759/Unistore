@@ -19,12 +19,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
+import com.kloc.unistore.model.productViewModel.ProductViewModel
 import com.kloc.unistore.model.viewModel.MainViewModel
 import com.kloc.unistore.navigation.Screen.SchoolDetailsScreen
 import com.kloc.unistore.screens.CartScreen
@@ -48,7 +50,7 @@ fun NavGraph(
 ) {
     // Observe the current route in the back stack
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-
+    val productViewModel: ProductViewModel = hiltViewModel()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -97,7 +99,7 @@ fun NavGraph(
                 if (categoryId != null) {
                     mainViewModel.studentViewModel.clearStudentDetails()
                     mainViewModel.cartViewModel.clearCart()
-                    ProductDetailScreen(navController = navController, categoryId = categoryId)
+                    ProductDetailScreen(navController = navController, categoryId = categoryId,viewModel=productViewModel)
                 }
             }
             composable(
@@ -105,7 +107,7 @@ fun NavGraph(
                 arguments = listOf(navArgument(PRODUCT_ID) { type = NavType.IntType })
             ) { backStackEntry ->
                 val productId = backStackEntry.arguments?.getInt(PRODUCT_ID) ?: 0
-                ProductScreen(navController = navController, productId = productId, mainViewModel = mainViewModel)
+                ProductScreen(navController = navController, productId = productId,viewModel=productViewModel, mainViewModel = mainViewModel)
             }
 
             // Cart Screen
@@ -114,7 +116,7 @@ fun NavGraph(
             }
             // Order Details Screen
             composable(route = Screen.OrderDetailsScreen.route) {
-                OrderDetailsScreen(navController = navController, mainViewModel)
+                OrderDetailsScreen(navController = navController, mainViewModel,productViewModel=productViewModel)
             }
             // Student details screen
             composable(route = Screen.StudentDetailsScreen.route) {
