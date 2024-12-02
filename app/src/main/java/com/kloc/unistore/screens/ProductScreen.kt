@@ -41,13 +41,19 @@ import com.kloc.unistore.model.productViewModel.ProductViewModel
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.MaterialTheme.colors
 import androidx.compose.material.TextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.layout.ContentScale
 import com.kloc.unistore.model.cartViewModel.CartViewModel
 import com.kloc.unistore.model.orderViewModel.OrderViewModel
@@ -60,35 +66,24 @@ fun ProductScreen(
     viewModel: ProductViewModel,
     mainViewModel: MainViewModel
 ) {
-    // State to collect the list of bundled products
     val bundledProducts by viewModel.bundledProducts.collectAsState(initial = emptyList())
     val productDetails by viewModel.productDetails.collectAsState()
-    var productItemMap: HashMap<Int, Int> = hashMapOf()
+    val productItemMap = remember { mutableStateMapOf<Int, Int>() }
 
-
-    // Fetch product details using the productId
     LaunchedEffect(productId) {
-        viewModel.fetchProductDetailsById(productId) // Fetch product details by ID
-
+        viewModel.fetchProductDetailsById(productId)
     }
 
-    // Use LaunchedEffect to fetch bundled products when product details are available
     LaunchedEffect(productDetails) {
         productDetails?.let { product ->
             val bundledProductIds = product.bundled_items.map { it.product_id }
-            // Iterate over the bundled_items list and populate the HashMap
             product.bundled_items.forEach { item ->
-                val productId = item.product_id // Replace with the actual way to fetch productId from 'item'
-                val itemId = item.bundled_item_id       // Replace with the actual way to fetch itemId from 'item'
-
-                // If the productId is already in the map, append the new itemId to the existing list
-                productItemMap[productId] = itemId
+                productItemMap[item.product_id] = item.bundled_item_id
             }
-            viewModel.fetchBundledProducts(bundledProductIds) // Fetch bundled products
+            viewModel.fetchBundledProducts(bundledProductIds)
         }
     }
 
-    // Display product details
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -96,40 +91,36 @@ fun ProductScreen(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Check if product details are loaded
-        if (productDetails != null) {
+        productDetails?.let {
             Text(
-                text = "Product Name: ${productDetails!!.name}",
+                text = "Product Name: ${it.name}",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
             )
+        } ?: Text(text = "Loading product details...", fontSize = 20.sp)
 
-        } else {
-            // Optionally show a loading state or a placeholder
-            Text(text = "Loading product details...", fontSize = 20.sp)
-        }
-
-        // Display bundled products
         LazyColumn {
             items(bundledProducts) { bundledProduct ->
-                ProductCard(product = bundledProduct, mainViewModel,productItemMap) // Show each fetched bundled product
+                ProductCard(
+                    product = bundledProduct,
+                    mainViewModel = mainViewModel,
+                    productItemMap = productItemMap
+                )
             }
         }
     }
 }
 
-
 @Composable
-fun ProductCard(product: Product, mainViewModel: MainViewModel,productItemMap:HashMap<Int,Int>) {
+fun ProductCard(product: Product, mainViewModel: MainViewModel, productItemMap: Map<Int, Int>) {
     var quantity by remember { mutableStateOf(0) }
     var selectedSize by remember { mutableStateOf(product.attributes.firstOrNull()?.options?.firstOrNull()) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
-    var isCustomSizeChecked by remember { mutableStateOf(false) } // Track checkbox state
-    var sizeType by remember { mutableStateOf("")}
-    var variationId by remember { mutableStateOf(0)}
-    var itemId by remember { mutableStateOf(0)}
-    var index by remember { mutableStateOf(0)}
+    var isCustomSizeChecked by remember { mutableStateOf(false) }
+    var sizeType by remember { mutableStateOf("") }
+    var variationId by remember { mutableStateOf(0) }
+    var index by remember { mutableStateOf(0) }
 
     Card(
         modifier = Modifier
@@ -138,15 +129,21 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel,productItemMap:Ha
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 val imageUrl = product.images.firstOrNull()?.src ?: ""
                 AsyncImage(
                     model = imageUrl,
                     contentDescription = product.name,
-                    contentScale = ContentScale.Crop, // Ensures the image fills the entire space
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(100.dp)
                         .clip(RoundedCornerShape(8.dp))
@@ -157,47 +154,54 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel,productItemMap:Ha
                     Text(
                         text = product.name,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
+                        fontSize = 18.sp,
                         maxLines = 2,
                     )
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = if (product.stock_status == "instock") "In Stock" else "Out of Stock",
+                color = if (product.stock_status == "instock") Color(0xFF388E3C) else Color.Red,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = "MRP ₹${product.price}",
+                color = Color.DarkGray,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = if (product.stock_status == "instock") "In Stock" else "Out of Stock",
-                    color = if (product.stock_status == "instock") Color.Black else Color.Red,
-                    fontSize = 14.sp
-                )
-                Text(text = "MRP ₹${product.price}", color = Color.Gray, fontSize = 16.sp)
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp) ) {
-
                 if (!isCustomSizeChecked) {
-                    Text(text = "Size:", fontSize = 14.sp)
-
-                    // Dropdown for size selection
-                    Box {
+                    Text(text = "Size:", fontSize = 14.sp, modifier = Modifier.align(Alignment.CenterVertically))
+                    Box(
+                        modifier = Modifier
+                            .background(Color.LightGray, shape = RoundedCornerShape(4.dp))
+                            .clickable { isDropdownExpanded = true }
+                            .padding(8.dp)
+                    ) {
                         Text(
                             text = selectedSize ?: "Select",
-                            modifier = Modifier
-                                .clickable { isDropdownExpanded = true }
-                                .background(Color.LightGray, shape = RoundedCornerShape(4.dp))
-                                .padding(8.dp),
+                            fontSize = 14.sp,
                             color = Color.DarkGray
                         )
-
-                        DropdownMenu(expanded = isDropdownExpanded, onDismissRequest = { isDropdownExpanded = false }) {
+                        DropdownMenu(
+                            expanded = isDropdownExpanded,
+                            onDismissRequest = { isDropdownExpanded = false }
+                        ) {
                             product.attributes.forEach { attribute ->
                                 attribute.options.forEach { size ->
                                     DropdownMenuItem(onClick = {
                                         selectedSize = size
-                                        index=attribute.options.indexOf(selectedSize)
+                                        index = attribute.options.indexOf(size)
                                         isDropdownExpanded = false
                                     }) {
                                         Text(text = size)
@@ -208,87 +212,67 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel,productItemMap:Ha
                     }
                 }
 
+                Spacer(modifier = Modifier.width(16.dp))
+                Checkbox(
+                    checked = isCustomSizeChecked,
+                    onCheckedChange = { isCustomSizeChecked = it },
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                )
+                Text(
+                    text = "Custom Size",
+                    fontSize = 14.sp,
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                )
+            }
 
-                Checkbox(checked = isCustomSizeChecked, onCheckedChange = { isCustomSizeChecked = it })
+            if (isCustomSizeChecked) {
+                TextField(
+                    value = selectedSize ?: "",
+                    onValueChange = { selectedSize = it },
+                    label = { Text("Enter Custom Size") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                )
+            }
 
-                // Display custom size text if checkbox is unchecked
-                if (!isCustomSizeChecked) { Text(text = "Custom", fontSize = 14.sp) }
-                if (isCustomSizeChecked) { Text(text = " Size", fontSize = 14.sp)}
-
-                // Show custom size TextField if checkbox is checked
-                if (isCustomSizeChecked) {
-                    TextField(
-                        value = selectedSize?:"",
-                        onValueChange = { selectedSize = it },
-                        label = { Text("Enter Custom Size") },
-                        modifier = Modifier
-                            .height(56.dp)
-                            .fillMaxWidth()
-                            .padding(8.dp)
-                    )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                IconButton(onClick = { if (quantity > 0) quantity-- }) {
+                    Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                }
+                Text(text = quantity.toString(), fontSize = 16.sp)
+                IconButton(onClick = { quantity++ }) {
+                    Icon(Icons.Default.Add, contentDescription = "Increase")
                 }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = {
+                    sizeType = if (isCustomSizeChecked) "Custom" else "Size"
+                    variationId = product.variations.getOrElse(index) { 0 }.toString().toDouble().toInt()
+                    val itemId = productItemMap[product.id] ?: 0
 
-            // Quantity Control with Icons
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Absolute.SpaceEvenly) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(
-                        onClick = { if (quantity > 0) quantity-- },
-                        modifier = Modifier.size(32.dp),
-                        colors = ButtonDefaults.textButtonColors(containerColor = Color.Transparent),
-                        contentPadding = PaddingValues(0.dp)
-                    ) {
-                        Text("-", fontSize = 18.sp, color = Color.Black) // Set text color explicitly
-                    }
-
-                    Text(
-                        text = quantity.toString(),
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        fontSize = 16.sp
-                    )
-
-                    TextButton(
-                        onClick = { quantity++ },
-                        modifier = Modifier.size(32.dp),
-                        colors = ButtonDefaults.textButtonColors(containerColor = Color.Transparent),
-                        contentPadding = PaddingValues(0.dp)
-                    ) {
-                        Text("+", fontSize = 18.sp, color = Color.Black) // Set text color explicitly
-                    }
-                }
-                Button(
-                    onClick = {
-                        if(isCustomSizeChecked)
-                        {
-                            sizeType="Custom"
-                            variationId=0
-                        }
-                        else{
-                            sizeType="Size"
-                            variationId = product.variations.getOrElse(index) { 0 } .toString().toDouble().toInt()
-                        }
-                        itemId= productItemMap[product.id]!!
-                        mainViewModel.showToast(
-                            mainViewModel.cartViewModel.addToCart(
-                                product,
-                                quantity,
-                                selectedSize,
-                                sizeType,
-                                variationId,
-                                itemId
-                            )
+                    mainViewModel.showToast(
+                        mainViewModel.cartViewModel.addToCart(
+                            product = product,
+                            quantity = quantity,
+                            selectedSize = selectedSize,
+                            sizeType = sizeType,
+                            variationId = variationId,
+                            itemId = itemId
                         )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE)),
-                    enabled = quantity > 0
-                ) {
-                    Text("Add to Cart", color = Color.White)
-                }
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = quantity > 0
+            ) {
+                Text("Add to Cart", fontSize = 16.sp)
             }
         }
     }

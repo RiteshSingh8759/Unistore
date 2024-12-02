@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,7 +15,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -43,6 +46,7 @@ import com.kloc.unistore.navigation.Screen
 @Composable
 fun CartScreen(navController: NavHostController, mainViewModel: MainViewModel) {
     val cartItems by mainViewModel.cartViewModel.cartItems.collectAsState()
+    val scrollState = rememberScrollState() // Add scroll state for vertical scrolling
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (cartItems.isEmpty()) {
@@ -50,24 +54,33 @@ fun CartScreen(navController: NavHostController, mainViewModel: MainViewModel) {
                 Text(text = "Your cart is empty", fontSize = 18.sp, color = Color.Gray)
             }
         } else {
-            LazyColumn {
-                items(cartItems) { product ->
-                    CartProductCard(product, mainViewModel)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState) // Enable vertical scrolling
+            ) {
+                LazyColumn(
+                    modifier = Modifier.weight(1f), // Allows LazyColumn to occupy available space
+                    contentPadding = PaddingValues(bottom = 72.dp) // Add padding for button spacing
+                ) {
+                    items(cartItems) { product ->
+                        CartProductCard(product, mainViewModel)
+                    }
+                }
+
+                Button(
+                    onClick = {
+                        navController.navigate(Screen.OrderDetailsScreen.route) // Adjust navigation as needed
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .height(56.dp), // Set height for button
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
+                ) {
+                    Text("Checkout", color = Color.White)
                 }
             }
-        }
-        Button(
-            onClick = {
-                navController.navigate(Screen.OrderDetailsScreen.route) // Adjust navigation as needed
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .align(Alignment.BottomCenter) // Align button to the bottom of the screen
-                .height(56.dp), // Set height for button
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE))
-        ) {
-            Text("Checkout", color = Color.White)
         }
     }
 }

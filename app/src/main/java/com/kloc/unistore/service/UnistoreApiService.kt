@@ -19,6 +19,7 @@ import okhttp3.OkHttpClient
 import retrofit2.http.Body
 import retrofit2.http.POST
 import retrofit2.http.Path
+import java.util.concurrent.TimeUnit
 
 interface UnistoreApiService {
 
@@ -59,12 +60,17 @@ interface UnistoreApiService {
                         .build()
                     chain.proceed(request)
                 }
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(10, TimeUnit.SECONDS)
+                .writeTimeout(10, TimeUnit.SECONDS)
                 .build()
+
             val gson = GsonBuilder()
                 .registerTypeAdapter(MetaData::class.java, MetaDataDeserializer())
                 .registerTypeAdapter(Int::class.java, IntTypeAdapter())
                 .registerTypeAdapter(Double::class.java, DoubleTypeAdapter())
                 .create()
+
             return Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .client(client)
