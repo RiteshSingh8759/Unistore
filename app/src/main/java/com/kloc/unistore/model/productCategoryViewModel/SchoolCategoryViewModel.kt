@@ -24,4 +24,7 @@ class SchoolCategoryViewModel @Inject constructor(
             _categories.value = response ?: emptyList()
         }
     }
+    fun resetCategories() {
+        _categories.value = emptyList()
+    }
 }

@@ -1,6 +1,5 @@
 package com.kloc.unistore.screens
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -55,15 +54,21 @@ import com.kloc.unistore.entity.order.Taxe
 import com.kloc.unistore.entity.order.TmcpPostFields
 import com.kloc.unistore.model.orderViewModel.OrderViewModel
 import com.kloc.unistore.model.productViewModel.ProductViewModel
-import com.kloc.unistore.model.schoolViewModel.SchoolViewModel
 import com.kloc.unistore.model.viewModel.MainViewModel
 import com.kloc.unistore.navigation.Screen
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.material.MaterialTheme.colors
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
@@ -77,143 +82,224 @@ import com.kloc.unistore.entity.pineLabs.billing.AdditionalInfo
 import com.kloc.unistore.entity.pineLabs.billing.UploadBilledTransaction
 import com.kloc.unistore.entity.pineLabs.status.GetCloudBasedTxnStatus
 import com.kloc.unistore.model.paymentViewModel.PaymentViewModel
+import com.kloc.unistore.model.schoolViewModel.SchoolViewModel
 import com.kloc.unistore.util.Constants
 import kotlinx.coroutines.delay
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderDetailsScreen(
     navController: NavController,
     mainViewModel: MainViewModel,
     productViewModel: ProductViewModel,
     orderViewModel: OrderViewModel = hiltViewModel(),
-    schoolViewModel: SchoolViewModel = hiltViewModel(),
     paymentViewModel: PaymentViewModel = hiltViewModel()
-
 ) {
-    var paymentInitiate by remember { mutableStateOf(false)  }
-    val orderCreatedBy by remember { mutableStateOf("Avinash")  }
-    val schoolDetails by schoolViewModel.schoolDetails.collectAsState()
-    val productDetails by productViewModel.productDetails.collectAsState()
+    var paymentInitiate by remember { mutableStateOf(false) }
     val cartItems by mainViewModel.cartViewModel.cartItems.collectAsState()
     val studentDetails by mainViewModel.studentViewModel.studentDetails.collectAsState()
     val totalAmount = cartItems.sumOf { it.product.price * it.quantity }
-    val totalQuantity=cartItems.sumOf { it.quantity }
+    val totalQuantity = cartItems.sumOf { it.quantity }
     var selectedPaymentType by remember { mutableStateOf(0) }
-    var selectedPaymentStatus by remember { mutableStateOf("") }
-    val MetaDataMap: HashMap<String, StampData> = hashMapOf()
 
-    BackHandler {
-        navController.navigate(Screen.CartScreen.route) {
-            // Pop all the backstack to ensure CartScreen is the root
-            popUpTo(Screen.CartScreen.route) { inclusive = true }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Order Details", style = MaterialTheme.typography.headlineMedium) },
+                navigationIcon = {
+                }
+            )
         }
-    }
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
+    ) { paddingValues ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.Start
+                .padding(paddingValues)
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            Text(
-                text = "Order Details",
-                style = MaterialTheme.typography.headlineLarge,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            // Product Details
-            Text(
-                text = "Products:",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            Column(modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.Start)) {
-                // Use LazyColumn to make the list scrollable
-                LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
-                    items(cartItems) { cartItem ->
-                        ProductDetailRow(cartItem)
-                        Log.d("debug","${cartItem.itemId} ---${cartItem.variationId}---${cartItem.type}---${cartItem.size}")
-                        Spacer(modifier = Modifier.height(4.dp))
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Shipping Address
-            Text(
-                text = "Shipping Address:",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            Text(
-                text = studentDetails?.shipingAddress ?: "969 Market",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            // Total Amount
-            Text(
-                text = "Total Amount: ₹$totalAmount",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            // Payment Type and Status Dropdowns
-            Text(
-                text = "Payment Details:",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-
-                // Payment Type Dropdown
-                DropdownMenuField(
-                    label = "Payment Type",
-                    selectedOption = paymentMode(selectedPaymentType),
-                    onOptionSelected = { selectedPaymentType = it },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 8.dp) // Using weight to fill space evenly
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Confirm Place Order Button
-            Button(
-                onClick = {
-                    paymentInitiate = true
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE)),
-                shape = RoundedCornerShape(4.dp)
-            ) {
-                Text("Confirm Place Order", color = Color.White)
-            }
-        }
-        // Overlay and Payment Processing Indicator
-        if (paymentInitiate) {
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .clickable(enabled = false) {}, // Disable clicks on the background
-                contentAlignment = Alignment.Center
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp)
             ) {
-                PaymentProcessingIndicator(mainViewModel, paymentViewModel, productViewModel, orderViewModel, totalAmount, selectedPaymentType) { paymentInitiate = false }
+                // Products Section
+                OrderSectionCard(title = "Products") {
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 300.dp)
+                    ) {
+                        items(cartItems) { cartItem ->
+                            ProductDetailItem(cartItem)
+                            Divider(
+                                modifier = Modifier.padding(vertical = 4.dp),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                OrderSectionCard(title = "Shipping Address") {
+                    Text(
+                        text = studentDetails?.shipingAddress ?: "No shipping address provided",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                OrderSectionCard(title = "Order Summary") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Total Items",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "$totalQuantity",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Total Amount",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "₹$totalAmount",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                OrderSectionCard(title = "Payment Details") {
+                    DropdownMenuField(
+                        label = "Payment Type",
+                        selectedOption = paymentMode(selectedPaymentType),
+                        onOptionSelected = { selectedPaymentType = it },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+                Button(
+                    onClick = {
+                        paymentInitiate = true
+                              },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Text(
+                        "Confirm Place Order",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+            if (paymentInitiate) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.5f))
+                        .clickable(enabled = false) {},
+                    contentAlignment = Alignment.Center
+                ) {
+                    PaymentProcessingIndicator(
+                        mainViewModel,
+                        paymentViewModel,
+                        productViewModel,
+                        orderViewModel,
+                        totalAmount,
+                        selectedPaymentType
+                    ) { paymentInitiate = false }
+                }
             }
         }
     }
 }
 
+@Composable
+fun OrderSectionCard(
+    title: String,
+    content: @Composable () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+            content()
+        }
+    }
+}
 
+@Composable
+fun ProductDetailItem(cartItem: CartItem) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column {
+            Text(
+                text = cartItem.product.name,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2,
+                fontSize = 15.sp,
+                color = Color.Black,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "Size: ${cartItem.size}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "x${cartItem.quantity}",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(end = 8.dp)
+            )
+            Text(
+                text = "₹${cartItem.product.price * cartItem.quantity}",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
 @Composable
 fun ProductDetailRow(cartItem: CartItem) {
     var showFullNameDialog by remember { mutableStateOf(false) }
@@ -603,31 +689,31 @@ fun getOrderDetails(
     mainViewModel: MainViewModel,
     productViewModel: ProductViewModel,
     selectedPaymentType: Int): Order {
-    val stampDataMap: Map<String, StampData> =
-        mainViewModel.cartViewModel.cartItems.value?.associateBy(
-            { it.itemId.toString() } // Key: Product ID as String
-        ) { cartItem ->
-            StampData(
-                product_id = cartItem.product.id, // Product ID
-                quantity = cartItem.quantity, // Quantity
-                attributes = Attributes(
-                    attribute_class = cartItem.product.categories.firstOrNull()?.name.orEmpty(), // Class name
-                    attribute_pa_color = "", // Selected color
-                    attribute_pa_size = if (cartItem.type.equals(
-                            "Size",
-                            ignoreCase = true
-                        )
-                    ) cartItem.size else "",
-                    attribute_pa_custom_size = if (cartItem.type.equals(
-                            "Custom",
-                            ignoreCase = true
-                        )
-                    ) cartItem.size else ""
-                ),
-                variation_id = "${cartItem.variationId}", // Variation ID
-                discount = "" // Discount
-            )
-        } ?: hashMapOf()
+    val stampDataMap: MutableMap<String, MutableList<StampData>> = mutableMapOf()
+
+    mainViewModel.cartViewModel.cartItems.value?.forEach { cartItem ->
+        val key = cartItem.itemId.toString()
+        val stampData = StampData(
+            product_id = cartItem.product.id, // Product ID
+            quantity = cartItem.quantity, // Quantity
+            attributes = Attributes(
+                attribute_class = cartItem.product.categories.firstOrNull()?.name.orEmpty(), // Class name
+                attribute_pa_color = "", // Selected color
+                attribute_pa_size = if (cartItem.type.equals("Size", ignoreCase = true)) cartItem.size else "",
+                attribute_pa_custom_size = if (cartItem.type.equals("Custom", ignoreCase = true)) cartItem.size else ""
+            ),
+            variation_id = "${cartItem.variationId}", // Variation ID
+            discount = "" // Discount
+        )
+
+        // Add the StampData to the list associated with the key
+        if (stampDataMap.containsKey(key)) {
+            stampDataMap[key]?.add(stampData)
+        } else {
+            stampDataMap[key] = mutableListOf(stampData)
+        }
+    }
+
     val tmCardEpoDataList = listOf(
         TMCardEpoData(
             mode = "builder",
@@ -808,7 +894,7 @@ fun getOrderDetails(
     }
 //    Log.d("debug", "${mainViewModel.cartViewModel.cartItems.value.sumOf { it.product.price * it.quantity }}")
     // Convert CartItem to LineItem
-    val lineItems: List<LineItem> = listOf(
+    val lineItems: MutableList<LineItem> = mutableListOf(
         LineItem(
             bundled_by = "",
             bundled_item_title = "",
@@ -865,6 +951,7 @@ fun getOrderDetails(
             variation_id = 0
         )
     )
+    lineItems += individualLineItems
     return Order(
 
         billing = Billing(
@@ -904,12 +991,12 @@ fun getOrderDetails(
         fee_lines = emptyList(),
 //        id = 1001,
         is_editable = false,
-        line_items = lineItems + individualLineItems,
-        meta_data = listOf(
+        line_items = lineItems,
+                meta_data = listOf(
             MetaDataX(
                 id = 1,
-                key = "",
-                value = ""
+                key = "staff_id",
+                value = "123 Ravi"
             )
         ),
         needs_payment = false,

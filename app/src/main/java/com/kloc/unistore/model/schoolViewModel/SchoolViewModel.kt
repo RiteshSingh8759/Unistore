@@ -30,4 +30,8 @@ class SchoolViewModel @Inject constructor(
             }
         }
     }
+    // Other methods can be added here
+    fun resetSchoolDetails() {
+        _schoolDetails.value = null
+    }
 }

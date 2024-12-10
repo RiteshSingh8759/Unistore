@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -32,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -49,20 +51,25 @@ fun ProductDetailScreen(
     categoryId: Int,
     viewModel: ProductViewModel,
 ) {
-
     LaunchedEffect(categoryId) {
         viewModel.getProducts(categoryId)
-
     }
 
-    val products by viewModel.products.collectAsState() // Collecting state
+    val products by viewModel.products.collectAsState()
 
-    // UI to display products
-    LazyColumn {
-        items(products) { product ->
-            ProductCard(product = product) {
-                // Navigate to the product detail screen with the productId
-                navController.navigate(Screen.ProductScreen.createRoute(product.id))
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp) // Uniform horizontal padding
+    ) {
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(16.dp), // Consistent spacing between items
+            contentPadding = PaddingValues(vertical = 16.dp) // Padding for top and bottom to avoid clipping
+        ) {
+            items(products) { product ->
+                ProductCard(product = product) {
+                    navController.navigate(Screen.ProductScreen.createRoute(product.id))
+                }
             }
         }
     }
@@ -71,41 +78,53 @@ fun ProductDetailScreen(
 @Composable
 fun ProductCard(product: Product, onClick: () -> Unit) {
     Card(
+
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
-            .clickable { onClick() }, // Pass productId to onClick
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .height(200.dp) // Adjusted height for text and image
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .background(Color.White)
         ) {
-            // Product Image on top
+            // Product Image
             val imageUrl = product.images.firstOrNull()?.src ?: ""
-            AsyncImage(
-                model = imageUrl,
-                contentDescription = product.name,
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1f) // Ensures image is square
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.LightGray)
-            )
+                    .weight(1f) // Ensures image takes equal space
+                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                    .background(Color.LightGray),
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = product.name,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .aspectRatio(1.5f),
+                    contentScale = ContentScale.Crop
+                )
+            }
 
+            // Spacer for separation
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Product Name at the bottom
+            // Product Name
             Text(
                 text = product.name,
+                color = Color.Black,
                 fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
+                fontSize = 20.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(vertical = 8.dp)
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 8.dp) // Padding around text
             )
         }
     }

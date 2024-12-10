@@ -1,12 +1,10 @@
 package com.kloc.unistore.screens
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,30 +31,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.kloc.unistore.entity.product.Product
 import com.kloc.unistore.model.productViewModel.ProductViewModel
 import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.MaterialTheme.colors
 import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.layout.ContentScale
-import com.kloc.unistore.model.cartViewModel.CartViewModel
-import com.kloc.unistore.model.orderViewModel.OrderViewModel
+import com.kloc.unistore.common.CommonProgressIndicator
 import com.kloc.unistore.model.viewModel.MainViewModel
 
 @Composable
@@ -68,17 +62,23 @@ fun ProductScreen(
 ) {
     val bundledProducts by viewModel.bundledProducts.collectAsState(initial = emptyList())
     val productDetails by viewModel.productDetails.collectAsState()
-    val productItemMap = remember { mutableStateMapOf<Int, Int>() }
-
+    val productItemMap = remember { mutableStateMapOf<Int, MutableList<Pair<Int, Int>>>() }
+    var isLoading by remember{mutableStateOf(false)}
     LaunchedEffect(productId) {
+        isLoading = true
         viewModel.fetchProductDetailsById(productId)
     }
-
+    LaunchedEffect(productDetails, bundledProducts) {
+        isLoading = productDetails == null || bundledProducts.isEmpty()
+    }
     LaunchedEffect(productDetails) {
         productDetails?.let { product ->
             val bundledProductIds = product.bundled_items.map { it.product_id }
             product.bundled_items.forEach { item ->
-                productItemMap[item.product_id] = item.bundled_item_id
+                val valueList = productItemMap.getOrPut(item.product_id) { mutableListOf() }
+
+                // Add the pair (bundled_item_id, quantity_min) to the list
+                valueList.add(item.bundled_item_id to item.quantity_min)
             }
             viewModel.fetchBundledProducts(bundledProductIds)
         }
@@ -86,35 +86,26 @@ fun ProductScreen(
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+            .fillMaxSize(),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        productDetails?.let {
-            Text(
-                text = "Product Name: ${it.name}",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-        } ?: Text(text = "Loading product details...", fontSize = 20.sp)
-
-        LazyColumn {
-            items(bundledProducts) { bundledProduct ->
-                ProductCard(
-                    product = bundledProduct,
-                    mainViewModel = mainViewModel,
-                    productItemMap = productItemMap
-                )
+        when {
+            isLoading -> CommonProgressIndicator(":package:", "Loading product details...")
+            productDetails != null -> {
+                Text(text = "Product Name: ${productDetails!!.name}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) { items(bundledProducts) { bundledProduct -> ProductCard(product = bundledProduct, mainViewModel = mainViewModel, productItemMap = productItemMap) } }
             }
+            else -> Text("Product not found.", color = Color.Red)
         }
+
     }
 }
 
 @Composable
-fun ProductCard(product: Product, mainViewModel: MainViewModel, productItemMap: Map<Int, Int>) {
-    var quantity by remember { mutableStateOf(0) }
+fun ProductCard(product: Product, mainViewModel: MainViewModel, productItemMap: SnapshotStateMap<Int, MutableList<Pair<Int, Int>>>) {
+    val initialItemPair = productItemMap[product.id]?.firstOrNull() ?: (0 to 0)
+    var quantity by remember {  mutableStateOf(initialItemPair.second) }
     var selectedSize by remember { mutableStateOf(product.attributes.firstOrNull()?.options?.firstOrNull()) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
     var isCustomSizeChecked by remember { mutableStateOf(false) }
@@ -174,14 +165,18 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel, productItemMap: 
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
-
+            if (product.attributes.any { it.options.isNotEmpty() }) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 if (!isCustomSizeChecked) {
-                    Text(text = "Size:", fontSize = 14.sp, modifier = Modifier.align(Alignment.CenterVertically))
+                    Text(
+                        text = "Size:",
+                        fontSize = 14.sp,
+                        modifier = Modifier.align(Alignment.CenterVertically)
+                    )
                     Box(
                         modifier = Modifier
                             .background(Color.LightGray, shape = RoundedCornerShape(4.dp))
@@ -224,6 +219,7 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel, productItemMap: 
                     modifier = Modifier.align(Alignment.CenterVertically)
                 )
             }
+        }
 
             if (isCustomSizeChecked) {
                 TextField(
@@ -242,7 +238,7 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel, productItemMap: 
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                IconButton(onClick = { if (quantity > 0) quantity-- }) {
+                IconButton(onClick = { if (quantity > initialItemPair.second) quantity-- }) {
                     Icon(Icons.Default.Remove, contentDescription = "Decrease")
                 }
                 Text(text = quantity.toString(), fontSize = 16.sp)
@@ -256,18 +252,21 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel, productItemMap: 
                 onClick = {
                     sizeType = if (isCustomSizeChecked) "Custom" else "Size"
                     variationId = product.variations.getOrElse(index) { 0 }.toString().toDouble().toInt()
-                    val itemId = productItemMap[product.id] ?: 0
-
+                    val itemId = initialItemPair.first
+                    // Default to "No Size" for products without size options
+                    val sizeToAdd = if (product.attributes.isEmpty()) "No Size" else selectedSize
                     mainViewModel.showToast(
                         mainViewModel.cartViewModel.addToCart(
                             product = product,
                             quantity = quantity,
-                            selectedSize = selectedSize,
+                            min_Quantity=initialItemPair.second,
+                            selectedSize = sizeToAdd,
                             sizeType = sizeType,
                             variationId = variationId,
                             itemId = itemId
                         )
                     )
+                    quantity = initialItemPair.second
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = quantity > 0

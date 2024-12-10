@@ -49,4 +49,10 @@ class ProductViewModel @Inject constructor(
             _bundledProducts.value = products // Update the state flow with the list of products
         }
     }
+
+    fun resetProductData() {
+        _products.value = emptyList()
+        _productDetails.value = null
+        _bundledProducts.value = emptyList()
+    }
 }

@@ -91,5 +91,10 @@ dependencies {
     implementation ("com.squareup.okhttp3:logging-interceptor:4.11.0")
     implementation ("androidx.compose.material3:material3:1.2.0-alpha01")
 
-
+    implementation("com.google.accompanist:accompanist-pager:0.12.0")
+    implementation ("com.google.accompanist:accompanist-pager-indicators:0.28.0")
+    implementation ("androidx.compose.animation:animation:1.7.5")
+    implementation ("androidx.compose.runtime:runtime:1.7.5")
+    implementation ("com.github.bumptech.glide:glide:4.16.0")
+    implementation("io.github.dokar3:sonner:0.3.8")
 }

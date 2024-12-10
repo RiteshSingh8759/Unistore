@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.kloc.unistore.common.CommonProgressIndicator
 import com.kloc.unistore.entity.productCategory.Category
 import com.kloc.unistore.model.productCategoryViewModel.SchoolCategoryViewModel
 import com.kloc.unistore.navigation.Screen
@@ -40,39 +41,33 @@ import com.kloc.unistore.navigation.Screen
 fun SchoolCategoryScreen(
     navController: NavHostController,
     schoolId: Int,
-    viewModel: SchoolCategoryViewModel = hiltViewModel() // Assuming you have a ViewModel to handle API calls
+    viewModel: SchoolCategoryViewModel = hiltViewModel()
 ) {
-    // State to hold the list of categories
     val categories by viewModel.categories.collectAsState(initial = emptyList())
-    val context = LocalContext.current
 
-    // Trigger API call when the screen loads
     LaunchedEffect(Unit) {
         viewModel.fetchCategories(schoolId)
     }
 
-    if (categories.isEmpty()) {
-        // Show a loading or empty message if there are no categories
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(text = "Loading categories...")
-        }
-    } else {
-        // Display categories in a two-column grid
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            contentPadding = PaddingValues(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(categories) { category ->
-                CategoryItem(category = category) {
-                    navController.navigate(Screen.ProductDetailsScreen.createRoute(category.id))
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (categories.isEmpty()) {
+           CommonProgressIndicator(type = "", message ="Loading Grade" )
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                contentPadding = PaddingValues(vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp), // Space between columns
+                verticalArrangement = Arrangement.spacedBy(16.dp)   // Space between rows
+            ) {
+                items(categories) { category ->
+                    CategoryItem(category = category) {
+                        navController.navigate(Screen.ProductDetailsScreen.createRoute(category.id))
+                    }
                 }
             }
-
         }
     }
 }
@@ -82,17 +77,14 @@ fun CategoryItem(category: Category, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(120.dp)
-            .padding(8.dp)
+            .height(140.dp)
             .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface),
-            contentAlignment = Alignment.Center
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.BottomCenter
         ) {
             AsyncImage(
                 model = category.image.src,
@@ -107,23 +99,21 @@ fun CategoryItem(category: Category, onClick: () -> Unit) {
                         brush = Brush.verticalGradient(
                             colors = listOf(
                                 Color.Transparent,
-                                Color.Black.copy(alpha = 0.6f)
+                                Color.Black.copy(alpha = 0.7f)
                             )
                         )
                     )
             )
             Text(
                 text = category.name,
-                style = MaterialTheme.typography.bodyLarge.copy(
+                style = MaterialTheme.typography.bodyMedium.copy(
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 ),
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
                     .padding(8.dp)
+                    .align(Alignment.BottomStart)
             )
         }
     }
 }
-
-
