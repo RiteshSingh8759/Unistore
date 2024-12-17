@@ -9,9 +9,7 @@ import com.kloc.unistore.service.PineLabsApiService
 import javax.inject.Inject
 
 class PaymentRepository @Inject constructor() {
-
     private val apiService = PineLabsApiService.create()
-
     // Function to initiate a payment
     suspend fun initiatePayment(request: UploadBilledTransaction): PineLabResponse? {
         return try {
@@ -28,7 +26,6 @@ class PaymentRepository @Inject constructor() {
             null
         }
     }
-
     // Function to get the transaction status
     suspend fun getTransactionStatus(request: GetCloudBasedTxnStatus): PineLabResponse? {
         return try {
@@ -42,6 +39,22 @@ class PaymentRepository @Inject constructor() {
             }
         } catch (e: Exception) {
             Log.e("debug", "Exception during fetching transaction status", e)
+            null
+        }
+    }
+    // Function to cancel a payment
+    suspend fun cancelPayment(request: GetCloudBasedTxnStatus): PineLabResponse? {
+        return try {
+            val response = apiService.cancelPayment(request)
+            if (response.isSuccessful) {
+                Log.d("debug", "Payment cancellation successful: ${response.body()}")
+                response.body()
+            } else {
+                Log.e("debug", "Payment cancellation failed: ${response.errorBody()?.string()}")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("debug", "Exception during payment cancellation", e)
             null
         }
     }

@@ -7,20 +7,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.kloc.unistore.model.productViewModel.ProductViewModel
 import androidx.compose.foundation.lazy.items
@@ -40,21 +36,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.kloc.unistore.entity.product.Product
-import com.kloc.unistore.model.cartViewModel.CartViewModel
-import com.kloc.unistore.model.studentViewModel.StudentViewModel
-import com.kloc.unistore.model.viewModel.MainViewModel
+import com.kloc.unistore.firestoredb.viewmodel.EmployeeViewModel
 import com.kloc.unistore.navigation.Screen
 
 @Composable
 fun ProductDetailScreen(
     navController: NavController,
     categoryId: Int,
-    viewModel: ProductViewModel,
+    viewModel: ProductViewModel
 ) {
     LaunchedEffect(categoryId) {
         viewModel.getProducts(categoryId)
     }
-
     val products by viewModel.products.collectAsState()
 
     Box(

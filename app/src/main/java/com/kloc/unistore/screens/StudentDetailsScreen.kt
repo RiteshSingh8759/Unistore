@@ -19,6 +19,7 @@ import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -34,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.kloc.unistore.common.CommonDropdownMenu
 import com.kloc.unistore.entity.student.Student
 import com.kloc.unistore.model.viewModel.MainViewModel
 import com.kloc.unistore.navigation.Screen
@@ -47,18 +50,18 @@ fun StudentDetailsScreen(
     val context = LocalContext.current
     val studentDetails = mainViewModel.studentViewModel.studentDetails.value
 
-    var studentName by remember { mutableStateOf(studentDetails?.studentName ?: "") }
-    var parentName by remember { mutableStateOf(studentDetails?.parentName ?: "") }
-    var phoneNumber by remember { mutableStateOf(studentDetails?.phoneNumber ?: "") }
-    var emailAddress by remember { mutableStateOf(studentDetails?.emailAddress ?: "") }
-    var billingAddress by remember { mutableStateOf(studentDetails?.billingAddress ?: "") }
-    var shippingAddress by remember { mutableStateOf(studentDetails?.shipingAddress ?: "") }
-    var city by remember { mutableStateOf(studentDetails?.city ?: "") }
-    var state by remember { mutableStateOf(studentDetails?.state ?: "") }
-    var zipCode by remember { mutableStateOf(studentDetails?.zipCode ?: "") }
+    var studentName by remember { mutableStateOf(studentDetails?.studentName ?: "a") }
+    var parentName by remember { mutableStateOf(studentDetails?.parentName ?: "a") }
+    var phoneNumber by remember { mutableStateOf(studentDetails?.phoneNumber ?: "a") }
+    var emailAddress by remember { mutableStateOf(studentDetails?.emailAddress ?: "a@gmail.com") }
+    var billingAddress by remember { mutableStateOf(studentDetails?.billingAddress ?: "wq") }
+    var shippingAddress by remember { mutableStateOf(studentDetails?.shipingAddress ?: "q") }
+    var city by remember { mutableStateOf(studentDetails?.city ?: "s") }
+    var state by remember { mutableStateOf(studentDetails?.state ?: "s") }
+    var zipCode by remember { mutableStateOf(studentDetails?.zipCode ?: "s") }
 
-    var selectedClass by remember { mutableStateOf(studentDetails?.selectedClass ?: "") }
-    var selectedGender by remember { mutableStateOf(studentDetails?.gender ?: "") }
+    var selectedClass by remember { mutableStateOf(studentDetails?.selectedClass ?: "s") }
+    var selectedGender by remember { mutableStateOf(studentDetails?.gender ?: "s") }
 
 
 
@@ -68,7 +71,7 @@ fun StudentDetailsScreen(
 
     Scaffold(
         bottomBar = {
-            Button(
+            Button(colors=  androidx.compose.material.ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary),
                 onClick = {
                     // Validate fields
                     if (studentName.isBlank() || parentName.isBlank() ||
@@ -106,7 +109,7 @@ fun StudentDetailsScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                Text("Save Student Details")
+                Text("Save Student Details",color= Color.White)
             }
         }
     ) { innerPadding ->
@@ -212,100 +215,20 @@ fun StudentDetailsScreen(
                     )
                 }
                 item {
-                    ExposedDropdownMenuBox(
-                        expanded = expandedClass,
-                        onExpandedChange = { expandedClass = !expandedClass }
-                    ) {
-                        OutlinedTextField(
-                            value = selectedClass,
-                            onValueChange = { selectedClass = it },
-                            label = { Text("Class") },
-                            modifier = Modifier.fillMaxWidth(),
-                            readOnly = true,
-                            trailingIcon = {
-                                Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
-                            }
-                        )
-                        ExposedDropdownMenu(
-                            expanded = expandedClass,
-                            onDismissRequest = { expandedClass = false }
-                        ) {
-                            (1..10).forEach { option ->
-                                DropdownMenuItem(
-                                    onClick = {
-                                        selectedClass = "Class $option"
-                                        expandedClass = false
-                                    }
-                                ) {
-                                    Text("Class $option")
-                                }
-                            }
-                        }
-                    }
+                    CommonDropdownMenu(
+                        label = "Class",
+                        items = (1..10).map { "Class $it" },
+                        selectedItem = selectedClass,
+                        onItemSelected = { selectedClass = it }
+                    )
                 }
-//                item {
-//                    ExposedDropdownMenuBox(
-//                        expanded = expandedPaymentMethod,
-//                        onExpandedChange = { expandedPaymentMethod = !expandedPaymentMethod }
-//                    ) {
-//                        OutlinedTextField(
-//                            value = selectedPaymentMethod,
-//                            onValueChange = { selectedPaymentMethod = it },
-//                            label = { Text("Payment Method") },
-//                            modifier = Modifier.fillMaxWidth(),
-//                            readOnly = true,
-//                            trailingIcon = {
-//                                Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
-//                            }
-//                        )
-////                        ExposedDropdownMenu(
-////                            expanded = expandedPaymentMethod,
-////                            onDismissRequest = { expandedPaymentMethod = false }
-////                        ) {
-////                            listOf("Cash", "Card", "Online Transfer").forEach { option ->
-////                                DropdownMenuItem(
-////                                    onClick = {
-////                                        selectedPaymentMethod = option
-////                                        expandedPaymentMethod = false
-////                                    }
-////                                ) {
-////                                    Text(option)
-////                                }
-////                            }
-////                        }
-//                    }
-//                }
                 item {
-                    ExposedDropdownMenuBox(
-                        expanded = expandedGender,
-                        onExpandedChange = { expandedGender = !expandedGender }
-                    ) {
-                        OutlinedTextField(
-                            value = selectedGender,
-                            onValueChange = { selectedGender = it },
-                            label = { Text("Gender") },
-                            modifier = Modifier.fillMaxWidth(),
-                            readOnly = true,
-                            trailingIcon = {
-                                Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
-                            }
-                        )
-                        ExposedDropdownMenu(
-                            expanded = expandedGender,
-                            onDismissRequest = { expandedGender = false }
-                        ) {
-                            listOf("Male", "Female", "Other").forEach { option ->
-                                DropdownMenuItem(
-                                    onClick = {
-                                        selectedGender = option
-                                        expandedGender = false
-                                    }
-                                ) {
-                                    Text(option)
-                                }
-                            }
-                        }
-                    }
+                    CommonDropdownMenu(
+                        label = "Gender",
+                        items = listOf("Male", "Female", "Other"),
+                        selectedItem = selectedGender,
+                        onItemSelected = { selectedGender = it }
+                    )
                 }
             }
         }

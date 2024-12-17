@@ -14,13 +14,14 @@ import javax.inject.Inject
 class SchoolCategoryViewModel @Inject constructor(
     private val repository: CategoryRepository
 ) : ViewModel() {
-
     private val _categories = MutableStateFlow<List<Category>>(emptyList())
     val categories: StateFlow<List<Category>> = _categories
-
+    private val _isCategories = MutableStateFlow(false)
+    val isCategories: StateFlow<Boolean> = _isCategories
     fun fetchCategories(schoolId: Int) {
         viewModelScope.launch {
             val response = repository.getCategoriesByParent(schoolId)
+            _isCategories.value = response.isNullOrEmpty()
             _categories.value = response ?: emptyList()
         }
     }

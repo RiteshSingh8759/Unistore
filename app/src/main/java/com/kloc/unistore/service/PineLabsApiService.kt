@@ -12,20 +12,20 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 
 interface PineLabsApiService {
-
     @POST("CloudBasedIntegration/V1/UploadBilledTransaction")
     suspend fun initiatePayment(
         @Body request: UploadBilledTransaction
     ): Response<PineLabResponse>
-
     @POST("CloudBasedIntegration/V1/GetCloudBasedTxnStatus")
     suspend fun getTransactionStatus(
         @Body request: GetCloudBasedTxnStatus
     ): Response<PineLabResponse>
-
+    @POST("CloudBasedIntegration/V1/CancelTransaction")
+    suspend fun cancelPayment(
+        @Body request: GetCloudBasedTxnStatus
+    ): Response<PineLabResponse>
     companion object {
         private const val BASE_URL = "https://www.plutuscloudserviceuat.in:8201/API/"
-
         fun create(): PineLabsApiService {
             val client = OkHttpClient.Builder().build()
             return Retrofit.Builder()

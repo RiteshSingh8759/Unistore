@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("kotlin-kapt")
     id("dagger.hilt.android.plugin")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -47,6 +48,8 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/NOTICE.md"
+            excludes += "/META-INF/LICENSE.md"
         }
     }
 }
@@ -97,4 +100,17 @@ dependencies {
     implementation ("androidx.compose.runtime:runtime:1.7.5")
     implementation ("com.github.bumptech.glide:glide:4.16.0")
     implementation("io.github.dokar3:sonner:0.3.8")
+
+    //firebase
+    implementation("com.google.firebase:firebase-firestore:25.1.1")
+    implementation("com.google.firebase:firebase-database:21.0.0")
+    implementation("com.google.firebase:firebase-auth:23.1.0")
+    implementation("com.google.firebase:firebase-analytics-ktx:22.1.2")
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation ("com.google.android.gms:play-services-safetynet:18.1.0")
+
+    // Mail dependency
+    implementation ("com.sun.mail:android-mail:1.6.7")
+    implementation ("com.sun.mail:android-activation:1.6.7")
+
 }

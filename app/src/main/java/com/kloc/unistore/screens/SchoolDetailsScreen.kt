@@ -1,9 +1,7 @@
 package com.kloc.unistore.screens
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
+import android.util.Log
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,11 +13,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.ExposedDropdownMenuBox
+import androidx.compose.material.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.OutlinedTextField
@@ -52,6 +54,8 @@ import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
 import com.kloc.unistore.R
 import com.kloc.unistore.common.LoadingButton
+import com.kloc.unistore.firestoredb.module.DeviceModel
+import com.kloc.unistore.firestoredb.viewmodel.EmployeeViewModel
 import com.kloc.unistore.model.schoolViewModel.SchoolViewModel
 import com.kloc.unistore.navigation.Screen
 import kotlinx.coroutines.delay
@@ -59,9 +63,11 @@ import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun SchoolDetailsScreen(
     navController: NavHostController,
+    employeeViewModel: EmployeeViewModel,
     viewModel: SchoolViewModel = hiltViewModel()
 ) {
     var slugId by remember { mutableStateOf("") }
@@ -70,6 +76,12 @@ fun SchoolDetailsScreen(
     var isLoading by remember { mutableStateOf(false) }
     var lastClickTime by remember { mutableLongStateOf(0L) }
 
+    //staff related
+    val userData = employeeViewModel.res1.value
+    val deviceListState = employeeViewModel.deviceList.value
+    var selectedDevice by remember { mutableStateOf<DeviceModel?>(null) }
+    var expanded by remember { mutableStateOf(false) }
+    var userInput = employeeViewModel.userInput.value
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -82,28 +94,79 @@ fun SchoolDetailsScreen(
                 .fillMaxWidth()
                 .padding(bottom = 32.dp)
         )
-
+        Text(
+            text = "Welcome ${userData.data?.employee?.name ?: "User"}",
+            fontSize = 24.sp,
+            color = Color.Black,
+            fontWeight = FontWeight.Medium
+        )
         OutlinedTextField(
             value = slugId,
             onValueChange = { slugId = it },
-            label = { Text("Enter Slug ID") },
+            label = { Text("Enter School Code") },
             modifier = Modifier.fillMaxWidth()
         )
+        Spacer(modifier = Modifier.height(8.dp))
+        // code for dropdown device id
+
+        if (deviceListState.isLoading) {
+            CircularProgressIndicator()
+        }
+        else if (!deviceListState.data.isNullOrEmpty()) {
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
+                OutlinedTextField(
+                    value = selectedDevice?.device?.device_id ?: "Select a Device",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Select a Device") },
+                    modifier = Modifier.fillMaxWidth(),
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) }
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    deviceListState.data.forEach { device ->
+                        DropdownMenuItem(
+                            onClick = {
+                                selectedDevice = device
+                                expanded = false
+                            }
+                        ) {
+                            Text(text = device.device?.device_id ?: "Unknown")
+                        }
+                    }
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
         LoadingButton(
-            text = "Search",
+            text = "Submit",
             isLoading = isLoading,
             onClick = {
                 val currentTime = System.currentTimeMillis()
                 if (currentTime - lastClickTime > 2000) {
                     lastClickTime = currentTime
                     if (slugId.isNotBlank()) {
+                        selectedDevice?.let { device ->
+                            val deviceId = device.device?.device_id
+                            if (deviceId != null) {
+                                userInput= employeeViewModel.updateUserInput(deviceId).toString()
+                            } else {
+                                // Handle error: device_id is null
+                            }
+                        }
+
                         isLoading = true
                         viewModel.getSchoolDetails(slugId)
                     } else {
                         toaster.show(
                             Toast(
-                                message = "Please enter a Slug ID",
+                                message = "Please enter a School Code",
                                 type = ToastType.Warning,
                                 duration = 2000.milliseconds
                             )
@@ -143,7 +206,7 @@ fun SchoolDetailsScreen(
             darkTheme = true,
             maxVisibleToasts = 1
         )
-        AboutUsSection()
+
     }
 }
 

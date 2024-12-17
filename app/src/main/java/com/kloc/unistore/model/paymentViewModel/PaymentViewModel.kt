@@ -17,15 +17,14 @@ import javax.inject.Inject
 class PaymentViewModel @Inject constructor(
     private val pineLabsRepository: PaymentRepository
 ) : ViewModel() {
-
     // StateFlow for payment initiation response
     private val _paymentResponse = MutableStateFlow<PineLabResponse?>(null)
     val paymentResponse: StateFlow<PineLabResponse?> = _paymentResponse
-
     // StateFlow for transaction status response
     private val _transactionStatus = MutableStateFlow<PineLabResponse?>(null)
     val transactionStatus: StateFlow<PineLabResponse?> = _transactionStatus
-
+    private val _cancelStatus = MutableStateFlow<PineLabResponse?>(null)
+    val cancelStatus: StateFlow<PineLabResponse?> = _cancelStatus
     // Function to initiate payment
     fun initiatePayment(request: UploadBilledTransaction) {
         viewModelScope.launch {
@@ -37,7 +36,6 @@ class PaymentViewModel @Inject constructor(
             }
         }
     }
-
     // Function to get transaction status
     fun getTransactionStatus(request: GetCloudBasedTxnStatus) {
         viewModelScope.launch {
@@ -48,5 +46,26 @@ class PaymentViewModel @Inject constructor(
                 _transactionStatus.value = null // Handle error by setting null
             }
         }
+    }
+    // Function to cancel payment
+    fun cancelPayment(request: GetCloudBasedTxnStatus) {
+        viewModelScope.launch {
+            try {
+                val cancelResponse = pineLabsRepository.cancelPayment(request)
+                _cancelStatus.value = cancelResponse
+                if (cancelResponse?.ResponseCode == 0) {
+                    _paymentResponse.value = null
+                    _transactionStatus.value = null
+                }
+            } catch (e: Exception) {
+                _cancelStatus.value = null
+            }
+        }
+    }
+    // AJ : Reset Payment Data
+    fun resetPaymentData() {
+        _paymentResponse.value = null
+        _transactionStatus.value = null
+        _cancelStatus.value = null
     }
 }

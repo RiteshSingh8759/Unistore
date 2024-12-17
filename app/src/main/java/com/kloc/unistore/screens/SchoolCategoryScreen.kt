@@ -35,23 +35,28 @@ import coil.compose.AsyncImage
 import com.kloc.unistore.common.CommonProgressIndicator
 import com.kloc.unistore.entity.productCategory.Category
 import com.kloc.unistore.model.productCategoryViewModel.SchoolCategoryViewModel
+import com.kloc.unistore.model.viewModel.MainViewModel
 import com.kloc.unistore.navigation.Screen
 
 @Composable
 fun SchoolCategoryScreen(
     navController: NavHostController,
     schoolId: Int,
+    mainViewModel: MainViewModel,
     viewModel: SchoolCategoryViewModel = hiltViewModel()
 ) {
     val categories by viewModel.categories.collectAsState(initial = emptyList())
-
+    val isCategories by viewModel.isCategories.collectAsState(initial = false)
     LaunchedEffect(Unit) {
         viewModel.fetchCategories(schoolId)
     }
-
     Box(modifier = Modifier.fillMaxSize()) {
         if (categories.isEmpty()) {
-           CommonProgressIndicator(type = "", message ="Loading Grade" )
+            CommonProgressIndicator(type = "", message ="Loading" )
+            if (isCategories) {
+                mainViewModel.logOut = true
+                navController.navigate(Screen.ProductDetailsScreen.createRoute(schoolId))
+            }
         } else {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),

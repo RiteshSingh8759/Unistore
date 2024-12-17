@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1026740654689",
+    "project_id": "posdetails-de134",
+    "storage_bucket": "posdetails-de134.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1026740654689:android:12c7448d1523ccf8cf9020",
+        "android_client_info": {
+          "package_name": "com.kloc.dummy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC5izTcDY7DhGgEurbsn5asCyB-MT0tEjY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1026740654689:android:bff96cf5f881f8fccf9020",
+        "android_client_info": {
+          "package_name": "com.kloc.unistore"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC5izTcDY7DhGgEurbsn5asCyB-MT0tEjY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

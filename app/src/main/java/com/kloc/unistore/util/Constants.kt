@@ -2,6 +2,8 @@ package com.kloc.unistore.util
 
 
 object Constants {
+    const val SIGN_IN_SCREEN = "signIn"
+    const val WELCOME_SCREEN = "Welcome"
     const val SCHOOL_DETAILS = "School_details"
     const val CATEGORY_DETAILS = "Category"
     const val SCHOOL_ID = "schoolId"

@@ -76,14 +76,12 @@ fun ProductScreen(
             val bundledProductIds = product.bundled_items.map { it.product_id }
             product.bundled_items.forEach { item ->
                 val valueList = productItemMap.getOrPut(item.product_id) { mutableListOf() }
-
                 // Add the pair (bundled_item_id, quantity_min) to the list
                 valueList.add(item.bundled_item_id to item.quantity_min)
             }
             viewModel.fetchBundledProducts(bundledProductIds)
         }
     }
-
     Column(
         modifier = Modifier
             .fillMaxSize(),
@@ -93,185 +91,199 @@ fun ProductScreen(
         when {
             isLoading -> CommonProgressIndicator(":package:", "Loading product details...")
             productDetails != null -> {
+                mainViewModel.className=productDetails!!.name
                 Text(text = "Product Name: ${productDetails!!.name}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) { items(bundledProducts) { bundledProduct -> ProductCard(product = bundledProduct, mainViewModel = mainViewModel, productItemMap = productItemMap) } }
+                LazyColumn(modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)) { items(bundledProducts) { bundledProduct -> ProductCard(product = bundledProduct, mainViewModel = mainViewModel, productItemMap = productItemMap) } }
             }
             else -> Text("Product not found.", color = Color.Red)
         }
-
     }
 }
-
 @Composable
 fun ProductCard(product: Product, mainViewModel: MainViewModel, productItemMap: SnapshotStateMap<Int, MutableList<Pair<Int, Int>>>) {
     val initialItemPair = productItemMap[product.id]?.firstOrNull() ?: (0 to 0)
     var quantity by remember {  mutableStateOf(initialItemPair.second) }
-    var selectedSize by remember { mutableStateOf(product.attributes.firstOrNull()?.options?.firstOrNull()) }
+    var selectedSize by remember { mutableStateOf(product.attributes.find { it.name == "Size" }?.options?.firstOrNull()) }
+    var selectedColor by remember { mutableStateOf(product.attributes.find { it.name == "Color" }?.options?.firstOrNull()) }
+    var isSizeDropdownExpanded by remember { mutableStateOf(false) }
+    var isColorDropdownExpanded by remember { mutableStateOf(false) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
     var isCustomSizeChecked by remember { mutableStateOf(false) }
     var sizeType by remember { mutableStateOf("") }
     var variationId by remember { mutableStateOf(0) }
     var index by remember { mutableStateOf(0) }
-
-    Card(
-        modifier = Modifier
+    Card(modifier = Modifier
+        .fillMaxWidth()
+        .padding(4.dp), shape = RoundedCornerShape(8.dp), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+        Column(modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.White)
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            .background(Color.White)
+            .padding(8.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 val imageUrl = product.images.firstOrNull()?.src ?: ""
                 AsyncImage(
                     model = imageUrl,
                     contentDescription = product.name,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .size(100.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(6.dp))
                         .background(Color.LightGray)
                 )
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = product.name,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
+                        fontSize = 14.sp,
                         maxLines = 2,
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
-
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = if (product.stock_status == "instock") "In Stock" else "Out of Stock",
                 color = if (product.stock_status == "instock") Color(0xFF388E3C) else Color.Red,
-                fontSize = 14.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
                 text = "MRP ₹${product.price}",
                 color = Color.DarkGray,
-                fontSize = 16.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             if (product.attributes.any { it.options.isNotEmpty() }) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                if (!isCustomSizeChecked) {
-                    Text(
-                        text = "Size:",
-                        fontSize = 14.sp,
-                        modifier = Modifier.align(Alignment.CenterVertically)
-                    )
-                    Box(
-                        modifier = Modifier
-                            .background(Color.LightGray, shape = RoundedCornerShape(4.dp))
-                            .clickable { isDropdownExpanded = true }
-                            .padding(8.dp)
-                    ) {
-                        Text(
-                            text = selectedSize ?: "Select",
-                            fontSize = 14.sp,
-                            color = Color.DarkGray
-                        )
-                        DropdownMenu(
-                            expanded = isDropdownExpanded,
-                            onDismissRequest = { isDropdownExpanded = false }
-                        ) {
-                            product.attributes.forEach { attribute ->
-                                attribute.options.forEach { size ->
-                                    DropdownMenuItem(onClick = {
-                                        selectedSize = size
-                                        index = attribute.options.indexOf(size)
-                                        isDropdownExpanded = false
-                                    }) {
-                                        Text(text = size)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-                Checkbox(
-                    checked = isCustomSizeChecked,
-                    onCheckedChange = { isCustomSizeChecked = it },
-                    modifier = Modifier.align(Alignment.CenterVertically)
-                )
-                Text(
-                    text = "Custom Size",
-                    fontSize = 14.sp,
-                    modifier = Modifier.align(Alignment.CenterVertically)
-                )
-            }
-        }
-
-            if (isCustomSizeChecked) {
-                TextField(
-                    value = selectedSize ?: "",
-                    onValueChange = { selectedSize = it },
-                    label = { Text("Enter Custom Size") },
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                )
-            }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    val availableSizes = product.attributes.find { it.name == "Size" }?.options.orEmpty()
+                    val availableColors = product.attributes.find { it.name == "Color" }?.options.orEmpty()
+                    if (availableSizes.isNotEmpty() && !isCustomSizeChecked) {
+                        AttributeDropdown(
+                            label = "Size",
+                            options = availableSizes,
+                            selectedOption = selectedSize,
+                            onOptionSelected = { selectedSize = it },
+                            isExpanded = isSizeDropdownExpanded,
+                            onExpandChanged = { isSizeDropdownExpanded = it }
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                    }
+                    if (availableColors.isNotEmpty()) {
+                        AttributeDropdown(
+                            label = "Color",
+                            options = availableColors,
+                            selectedOption = selectedColor,
+                            onOptionSelected = { selectedColor = it },
+                            isExpanded = isColorDropdownExpanded,
+                            onExpandChanged = { isColorDropdownExpanded = it }
+                        )
+                    }
 
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                IconButton(onClick = { if (quantity > initialItemPair.second) quantity-- }) {
-                    Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center) {
+                        Checkbox(
+                            checked = isCustomSizeChecked,
+                            onCheckedChange = { isCustomSizeChecked = it },
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Custom Size",
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
+        }
+        if (isCustomSizeChecked) {
+            TextField(
+                value = selectedSize ?: "",
+                onValueChange = { selectedSize = it },
+                label = { Text("Enter Custom Size", fontSize = 12.sp) },
+                modifier = Modifier
+                    .fillMaxWidth()
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { if (quantity > initialItemPair.second) quantity-- }, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Default.Remove, contentDescription = "Decrease", tint = Color.Black)
                 }
                 Text(text = quantity.toString(), fontSize = 16.sp)
-                IconButton(onClick = { quantity++ }) {
-                    Icon(Icons.Default.Add, contentDescription = "Increase")
+                IconButton(onClick = { quantity++ }, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Default.Add, contentDescription = "Increase", tint = Color.Black)
                 }
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = {
-                    sizeType = if (isCustomSizeChecked) "Custom" else "Size"
-                    variationId = product.variations.getOrElse(index) { 0 }.toString().toDouble().toInt()
-                    val itemId = initialItemPair.first
-                    // Default to "No Size" for products without size options
-                    val sizeToAdd = if (product.attributes.isEmpty()) "No Size" else selectedSize
-                    mainViewModel.showToast(
-                        mainViewModel.cartViewModel.addToCart(
-                            product = product,
-                            quantity = quantity,
-                            min_Quantity=initialItemPair.second,
-                            selectedSize = sizeToAdd,
-                            sizeType = sizeType,
-                            variationId = variationId,
-                            itemId = itemId
-                        )
+        }
+        Button(
+            onClick = {
+                sizeType = if (isCustomSizeChecked) "Custom" else "Size"
+                variationId = product.variations.getOrElse(index) { 0 }.toString().toDouble().toInt()
+                val itemId = initialItemPair.first
+                // Default to "No Size" for products without size options
+                val sizeToAdd = if (product.attributes.find { it.name == "Size" }?.options?.isEmpty() == true) "No Size" else selectedSize
+                mainViewModel.showToast(
+                    mainViewModel.cartViewModel.addToCart(
+                        product = product,
+                        quantity = quantity,
+                        min_Quantity=initialItemPair.second,
+                        selectedSize = sizeToAdd,
+                        selectedColor = selectedColor ?: "",
+                        sizeType = sizeType,
+                        variationId = variationId,
+                        itemId = itemId
                     )
-                    quantity = initialItemPair.second
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = quantity > 0
+                )
+                quantity = initialItemPair.second
+            },
+            modifier = Modifier.height(32.dp),
+            enabled = quantity > 0
+        ) {
+            Text("Add to Cart", fontSize = 12.sp)
+        }
+    }
+}
+@Composable
+fun AttributeDropdown(
+    label: String,
+    options: List<String>,
+    selectedOption: String?,
+    onOptionSelected: (String) -> Unit,
+    isExpanded: Boolean,
+    onExpandChanged: (Boolean) -> Unit
+) {
+    Column {
+        Text(text = "$label:", fontSize = 12.sp)
+        Box(
+            modifier = Modifier
+                .background(Color.LightGray, shape = RoundedCornerShape(4.dp))
+                .clickable { onExpandChanged(true) }
+                .padding(6.dp)
+        ) {
+            Text(text = selectedOption ?: "Select", fontSize = 12.sp, color = Color.DarkGray)
+            DropdownMenu(
+                expanded = isExpanded,
+                onDismissRequest = { onExpandChanged(false) }
             ) {
-                Text("Add to Cart", fontSize = 16.sp)
+                options.forEach { option ->
+                    DropdownMenuItem(onClick = {
+                        onOptionSelected(option)
+                        onExpandChanged(false)
+                    }) {
+                        Text(text = option)
+                    }
+                }
             }
         }
     }

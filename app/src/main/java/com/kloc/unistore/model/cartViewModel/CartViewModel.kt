@@ -10,14 +10,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CartViewModel @Inject constructor() : ViewModel() {
-
     private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
     val cartItems: StateFlow<List<CartItem>> = _cartItems
-
-    fun addToCart(product: Product, quantity: Int,min_Quantity:Int, selectedSize: String?,sizeType: String,variationId:Int,itemId:Int): String {
+    fun addToCart(product: Product, quantity: Int,min_Quantity:Int, selectedSize: String?, selectedColor: String,sizeType: String,variationId:Int,itemId:Int): String {
         val sizeToCompare = selectedSize ?: "No Size" // Handle products without sizes
         val existingItem = _cartItems.value.find {
-            it.product.id == product.id && it.size == sizeToCompare
+            it.product.id == product.id && it.size == sizeToCompare && it.color == selectedColor
         }
         return if (existingItem != null) {
             // Update the quantity of the existing item
@@ -26,18 +24,16 @@ class CartViewModel @Inject constructor() : ViewModel() {
             }
             "Product with selected size already exists.Quantity updated by ${quantity}"
         } else {
-                _cartItems.value = _cartItems.value + CartItem(product, quantity, min_Quantity,sizeType,itemId,variationId,selectedSize?:"")
-                "Product added to cart."
-
+            _cartItems.value = _cartItems.value + CartItem(product, quantity, min_Quantity,sizeType,itemId,variationId,selectedSize?:"", selectedColor)
+            "Product added to cart."
         }.also {
             // Trigger state update regardless
             _cartItems.value = _cartItems.value.toList()
         }
     }
-
     fun updateQuantity(cartItem: CartItem, newQuantity: Int) {
         _cartItems.value = _cartItems.value.map { item ->
-            if (item.product.id == cartItem.product.id && item.size == cartItem.size) {
+            if (item.product.id == cartItem.product.id && item.size == cartItem.size && item.color == cartItem.color) {
                 // Update the quantity of the cart item
                 item.copy(quantity = newQuantity)
             } else {
@@ -45,13 +41,11 @@ class CartViewModel @Inject constructor() : ViewModel() {
             }
         }
     }
-
     fun removeFromCart(cartItem: CartItem) {
         _cartItems.value = _cartItems.value.filterNot {
-            it.product.id == cartItem.product.id && it.size == cartItem.size
+            it.product.id == cartItem.product.id && it.size == cartItem.size && it.color == cartItem.color
         }
     }
-
     fun clearCart() {
         _cartItems.value = emptyList()
     }

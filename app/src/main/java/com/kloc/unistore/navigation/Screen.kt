@@ -9,10 +9,15 @@ import com.kloc.unistore.util.Constants.PRODUCT_DETAILS
 import com.kloc.unistore.util.Constants.PRODUCT_ID
 import com.kloc.unistore.util.Constants.SCHOOL_DETAILS
 import com.kloc.unistore.util.Constants.SCHOOL_ID
+import com.kloc.unistore.util.Constants.SIGN_IN_SCREEN
 import com.kloc.unistore.util.Constants.STUDENT_DETAILS_SCREEN
+import com.kloc.unistore.util.Constants.WELCOME_SCREEN
 
 
 sealed class Screen(val route: String) {
+
+    object SignInScreen : Screen(SIGN_IN_SCREEN)
+    object WelcomeScreen : Screen(WELCOME_SCREEN)
     object SchoolDetailsScreen: Screen(SCHOOL_DETAILS)
     object SchoolCategoryScreen : Screen("${CATEGORY_DETAILS}/{${SCHOOL_ID}}") {
         fun createRoute(schoolId: Int) = "${CATEGORY_DETAILS}/$schoolId"

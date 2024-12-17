@@ -1,5 +1,4 @@
 package com.kloc.unistore.common
-
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -32,9 +31,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
+import kotlinx.coroutines.delay
 @Composable
-fun SuccessfulAnimation(message: String = "Successful!", onComplete: (() -> Unit)? = null) {
+fun SuccessfulAnimation(message: String = "Successful!", onComplete: () -> Unit ) {
     var startAnimation by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(targetValue = if (startAnimation) 1f else 0f, animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing), label = "")
     val checkmarkAlpha by animateFloatAsState(targetValue = if (startAnimation) 1f else 0f, animationSpec = tween(durationMillis = 600, delayMillis = 600, easing = FastOutSlowInEasing), label = "")
@@ -42,7 +41,8 @@ fun SuccessfulAnimation(message: String = "Successful!", onComplete: (() -> Unit
     val messageAlpha by animateFloatAsState(targetValue = if (startAnimation) 1f else 0f, animationSpec = tween(durationMillis = 600, delayMillis = 1200, easing = LinearEasing), label = "")
     LaunchedEffect(Unit) {
         startAnimation = true
-        onComplete
+        delay(3000)
+        onComplete()
     }
     Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.7f)), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {

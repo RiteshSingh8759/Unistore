@@ -25,7 +25,7 @@ data class Order(
     val discount_tax: String,
     val discount_total: String,
     val fee_lines: List<Any>,
-//    val id: Int,
+    val id: Int?=null,
     val is_editable: Boolean,
     val line_items: List<LineItem>,
     val meta_data: List<MetaDataX>,
