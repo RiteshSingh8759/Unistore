@@ -6,9 +6,14 @@ import androidx.lifecycle.viewModelScope
 import com.kloc.unistore.entity.product.Product
 import com.kloc.unistore.repository.product.ProductRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.concurrent.Semaphore
 import javax.inject.Inject
 
 @HiltViewModel
@@ -26,11 +31,21 @@ class ProductViewModel @Inject constructor(
     val bundledProducts: StateFlow<List<Product>> = _bundledProducts
 
     fun getProducts(categoryId: Int) {
-            viewModelScope.launch {
-                    val productList = repository.fetchProducts(categoryId)
-                    _products.value = productList?: emptyList() // Update the StateFlow
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val productList = repository.fetchProducts(categoryId)
+                withContext(Dispatchers.Main) {
+                    _products.value = productList ?: emptyList()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    _products.value = emptyList()
+                }
+            }
         }
     }
+
 
     fun fetchProductDetailsById(productId: Int) {
         viewModelScope.launch {
@@ -41,16 +56,27 @@ class ProductViewModel @Inject constructor(
 
 
     fun fetchBundledProducts(productIds: List<Int>) {
+        val semaphore = Semaphore(10) // Limit concurrency to 10
         viewModelScope.launch {
-            // Fetch details for all provided product IDs
-            val products = productIds.mapNotNull { id ->
-                repository.fetchProductDetailsById(id) // Adjust this as needed
+            try {
+                val products = productIds.map { id ->
+                    async(Dispatchers.IO) {
+                        semaphore.acquire()
+                        try {
+                            repository.fetchProductDetailsById(id)
+                        } finally {
+                            semaphore.release()
+                        }
+                    }
+                }.awaitAll()
+                _bundledProducts.value = products.filterNotNull()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            _bundledProducts.value = products // Update the state flow with the list of products
         }
     }
-
-    fun resetProductData() {
+    fun resetProductData()
+    {
         _products.value = emptyList()
         _productDetails.value = null
         _bundledProducts.value = emptyList()

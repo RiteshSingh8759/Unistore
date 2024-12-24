@@ -1,5 +1,6 @@
 package com.kloc.unistore.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -60,6 +61,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import com.dokar.sonner.Toast
+import com.dokar.sonner.ToastType
+import com.dokar.sonner.Toaster
+import com.dokar.sonner.rememberToasterState
 import com.kloc.unistore.common.CommonDropdownMenu
 import com.kloc.unistore.common.CommonProgressIndicator
 import com.kloc.unistore.common.SuccessfulAnimation
@@ -72,6 +77,7 @@ import com.kloc.unistore.model.paymentViewModel.PaymentViewModel
 import com.kloc.unistore.util.Constants
 import kotlinx.coroutines.delay
 import java.util.UUID
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,9 +87,11 @@ fun OrderDetailsScreen(
     productViewModel: ProductViewModel,
     employeeViewModel: EmployeeViewModel,
     orderViewModel: OrderViewModel = hiltViewModel(),
-    paymentViewModel: PaymentViewModel = hiltViewModel(),
-
+    paymentViewModel: PaymentViewModel = hiltViewModel()
 ) {
+    val toaster = rememberToasterState()
+    Toaster(state = toaster, darkTheme = true, maxVisibleToasts = 1)
+
     var paymentInitiate by remember { mutableStateOf(false) }
     val cartItems by mainViewModel.cartViewModel.cartItems.collectAsState()
     val studentDetails by mainViewModel.studentViewModel.studentDetails.collectAsState()
@@ -98,17 +106,6 @@ fun OrderDetailsScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(16.dp)) {
-            Text(
-                text = "Order Details",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-
-            // Products Section
             OrderSectionCard(title = "Products") {
                 LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
                     items(cartItems) { cartItem ->
@@ -124,7 +121,7 @@ fun OrderDetailsScreen(
             Spacer(modifier = Modifier.height(16.dp))
             OrderSectionCard(title = "Shipping Address") {
                 Text(
-                    text = studentDetails?.shipingAddress ?: "No shipping address provided",
+                    text = studentDetails?.shippingAddressLine1 ?: "No shipping address provided",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -171,7 +168,7 @@ fun OrderDetailsScreen(
                     items = (0..46).filter { paymentMode(it) != "Unknown" }.map { paymentMode(it) },
                     selectedItem = paymentMode(selectedPaymentType),
                     onItemSelected = { selectedOption ->
-                        selectedPaymentType = (0..46).filter { paymentMode(it) != "Unknown" }.map { paymentMode(it) }.indexOf(selectedOption)
+                        selectedPaymentType = (0..46).first { paymentMode(it) == selectedOption }
                     }
                 )
             }
@@ -197,19 +194,25 @@ fun OrderDetailsScreen(
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.5f))
                 .clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
-                PaymentProcessingIndicator(
-                    mainViewModel,
-                    paymentViewModel,
-                    productViewModel,
-                    orderViewModel,
-                    totalAmount,
-                    selectedPaymentType,
-                    onComplete = { paymentViewModel.resetPaymentData()
-                        paymentInitiate = false },
-                    onCancel = { paymentViewModel.resetPaymentData()
-                        paymentInitiate = false },
-                    employeeViewModel
-                )
+                if (totalAmount < 100) {
+                    toaster.show(Toast(message = "Payment amount should be atleast 1 rupees", type = ToastType.Error, duration = 2000.milliseconds))
+                } else {
+                    PaymentProcessingIndicator(
+                        mainViewModel,
+                        paymentViewModel,
+                        productViewModel,
+                        orderViewModel,
+                        totalAmount,
+                        selectedPaymentType,
+                        onComplete = {
+                            paymentViewModel.resetPaymentData()
+                            paymentInitiate = false },
+                        onCancel = {
+                            paymentViewModel.resetPaymentData()
+                            paymentInitiate = false },
+                        employeeViewModel
+                    )
+                }
             }
         }
     }
@@ -225,7 +228,7 @@ fun OrderSectionCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = Color.White
         )
     ) {
         Column(modifier = Modifier
@@ -293,7 +296,11 @@ fun PaymentProcessingIndicator(
     onCancel: () -> Unit,
     employeeViewModel: EmployeeViewModel
 ) {
+    val toaster = rememberToasterState()
+    Toaster(state = toaster, darkTheme = true, maxVisibleToasts = 1)
+
     var isPaymentInitiated by remember { mutableStateOf(false) }
+    var ptrnNumber by remember { mutableStateOf(0) }
     var createOrder by remember { mutableStateOf(false) }
     var pollingAttempts by remember { mutableStateOf(0) }
     val maxPollingAttempts = 12
@@ -302,11 +309,18 @@ fun PaymentProcessingIndicator(
     val paymentStatus by paymentViewModel.transactionStatus.collectAsState()
     var orderId by remember { mutableStateOf(0) }
     val transactionNumber by remember { mutableStateOf(generateTransactionNumber()) }
-    var remainingTime by remember { mutableStateOf(60) }
+    val waitingTime by remember { mutableStateOf(when (selectedPaymentType) {
+        1 -> 2
+        10 -> 5
+        else -> 2
+    }) }
+    var remainingTime by remember { mutableStateOf(waitingTime * 60) }
     var currentAnimation by remember { mutableStateOf("Payment Processing") }
     // Showing Animations
     when (currentAnimation) {
-        "Payment Processing" -> CommonProgressIndicator("", "Processing Payment...\nRemaining Time: ${remainingTime}s", "Cancel Payment") { onCancel() }
+        "Payment Processing" -> CommonProgressIndicator("", "Processing Payment...\nRemaining Time: ${String.format("%02d:%02d", remainingTime / 60, remainingTime % 60)}", "Cancel Payment") {
+            onCancel()
+        }
         "Payment Successful Creating Order" -> CommonProgressIndicator("", "Payment Successful!\nCreating Order...")
         "Payment Successful Order Created" -> SuccessfulAnimation("Payment Successful!\nOrder Id: $orderId") { onComplete() }
         else -> onCancel()
@@ -314,21 +328,23 @@ fun PaymentProcessingIndicator(
     // Creating Order And insuring order create once only
     LaunchedEffect(createOrder) {
         if (createOrder) {
-            orderViewModel.placeOrder(getOrderDetails(mainViewModel, productViewModel, selectedPaymentType, transactionNumber,employeeViewModel)) { order ->
+            orderViewModel.placeOrder(getOrderDetails(mainViewModel, productViewModel, selectedPaymentType, "${ptrnNumber}",employeeViewModel)) { order ->
                 orderId = order?.id ?: 0
                 createOrder = false
                 currentAnimation = if (order != null) "Payment Successful Order Created" else ""
-                mainViewModel.showToast(order?.let { "Order Created!" } ?: "Order Creation Failed.")
+                order?.let { toaster.show(Toast(message = "Order Created!", type = ToastType.Success, duration = 2000.milliseconds))
+                } ?: run { toaster.show(Toast(message = "Order Creation Failed.", type = ToastType.Error, duration = 2000.milliseconds)) }
             }
         }
     }
-
     // Showing live remaining time for payment
     LaunchedEffect(remainingTime) {
         if (remainingTime > 0) {
             delay(1000L)
             remainingTime -= 1
-        } else { onCancel() }
+        } else {
+            onCancel()
+        }
     }
     // Sending request to Pine Lab machine for payment
     LaunchedEffect(isPaymentInitiated) {
@@ -344,7 +360,7 @@ fun PaymentProcessingIndicator(
                 SecurityToken = Constants.SECURITY_TOKEN,
                 StoreID = Constants.STORE_ID,
                 ClientID = Constants.CLIENT_ID,
-                AutoCancelDurationInMinutes = 1,
+                AutoCancelDurationInMinutes = waitingTime,
                 TotalInvoiceAmount = totalAmount,
                 AdditionalInfo = listOf(
                     AdditionalInfo(Tag = "1001", Value = "XYZ"),
@@ -357,6 +373,8 @@ fun PaymentProcessingIndicator(
     // Getting payment Response from Pine Lab machine
     LaunchedEffect(paymentResponse) {
         paymentResponse?.let { response ->
+            ptrnNumber = response.PlutusTransactionReferenceID ?: 0
+            Log.d("debug", "PTRM : $ptrnNumber")
             if (response.ResponseCode == 0) {
                 pollingAttempts = 0
                 while (pollingAttempts < maxPollingAttempts) {
@@ -367,18 +385,18 @@ fun PaymentProcessingIndicator(
                             ClientID = Constants.CLIENT_ID,
                             UserID = Constants.USER_ID,
                             StoreID = Constants.STORE_ID,
-                            PlutusTransactionReferenceID = response.PlutusTransactionReferenceID
+                            PlutusTransactionReferenceID = ptrnNumber
                         )
                     )
                     delay(pollingDelayMillis)
                     pollingAttempts++
                 }
                 if (paymentViewModel.transactionStatus.value?.ResponseCode == 1001 && pollingAttempts >= maxPollingAttempts) {
-                    mainViewModel.showToast("Timed out.")
+                    toaster.show(Toast(message = "Timed out.", type = ToastType.Warning, duration = 2000.milliseconds))
                     onCancel()
                 }
             } else {
-                mainViewModel.showToast("Payment failed")
+                toaster.show(Toast(message = "Payment failed", type = ToastType.Error, duration = 2000.milliseconds))
                 onCancel()
             }
         }
@@ -390,8 +408,28 @@ fun PaymentProcessingIndicator(
                 currentAnimation = "Payment Successful Creating Order"
                 createOrder = true
             }
+//            else if (status.ResponseCode == 1 && status.ResponseMessage == "INVALID PLUTUS TXN REF ID") {
+//                onCancel()
+//            }
         }
     }
+//    LaunchedEffect(cancelPayment) {
+//        if (cancelPayment) {
+//            if (ptrnNumber != 0) {
+//                paymentViewModel.cancelPayment(
+//                    GetCloudBasedTxnStatus(
+//                        MerchantID = Constants.MERCHANT_ID,
+//                        SecurityToken = Constants.SECURITY_TOKEN,
+//                        ClientID = Constants.CLIENT_ID,
+//                        UserID = Constants.USER_ID,
+//                        StoreID = Constants.STORE_ID,
+//                        PlutusTransactionReferenceID = ptrnNumber
+//                    )
+//                )
+//            }
+//            cancelPayment = false
+//        }
+//    }
 }
 
 
@@ -432,18 +470,18 @@ fun getOrderDetails(
     mainViewModel: MainViewModel,
     productViewModel: ProductViewModel,
     selectedPaymentType: Int,
-    transactionNumber: String,
+    ptrnNumber: String,
     employeeViewModel: EmployeeViewModel
 ): Order {
     val stampDataMap: MutableMap<String, MutableList<StampData>> = mutableMapOf()
     val staffDetails=employeeViewModel.res1.value.data?.employee
-    mainViewModel.cartViewModel.cartItems.value?.forEach { cartItem ->
+    mainViewModel.cartViewModel.cartItems.value.forEach { cartItem ->
         val key = cartItem.itemId.toString()
         val stampData = StampData(
             product_id = cartItem.product.id, // Product ID
             quantity = cartItem.quantity, // Quantity
             attributes = Attributes(
-                attribute_class = "${mainViewModel.className.toString()}", // Class name
+                attribute_class = mainViewModel.className, // Class name
                 attribute_pa_color =if( cartItem.color.isEmpty()) "" else cartItem.color.toString(), // Selected color
                 attribute_pa_size = if (cartItem.type.equals("Size", ignoreCase = true)) cartItem.size else "",
                 attribute_pa_custom_size = if (cartItem.type.equals("Custom", ignoreCase = true)) cartItem.size else ""
@@ -598,7 +636,7 @@ fun getOrderDetails(
             bundled_item_title = "",
             bundled_items = emptyList(),
             image = Image(
-                src = cartItem.product.images?.firstOrNull()?.src
+                src = cartItem.product.images.firstOrNull()?.src
                     ?: "default_image_url" // Use the `src` from `cartItem.image`
             ),
             meta_data = listOf(
@@ -610,25 +648,25 @@ fun getOrderDetails(
                 OrderMetaData(
                     id = 2,
                     key = "pa_class",
-                    value = "${mainViewModel.className.toString()}"
+                    value = mainViewModel.className
                 ),
                 OrderMetaData(
                     id = 2,
                     key = "pa_color",
-                    value = "${cartItem.color}"
+                    value = cartItem.color
                 ),
                 OrderMetaData(
                     id = 3,
                     key = if (cartItem.type == "Custom") "customSize" else "pa_size",
-                    value = "${cartItem.size}"
+                    value = cartItem.size
                 ),
                 OrderMetaData(
                     id = 3,
                     key = "_stamp",
                     value = stampDataMap
                 )
-            ).filter { it.value != null && it.value.toString().isNotBlank() },
-            name = "${mainViewModel.className.toString()}",
+            ).filter { it.value.toString().isNotBlank() },
+            name = mainViewModel.className,
             parent_name = mainViewModel.studentViewModel.studentDetails.value?.parentName.orEmpty(),
             price = cartItem.product.price,
             product_id = cartItem.product.id,
@@ -662,7 +700,7 @@ fun getOrderDetails(
                 OrderMetaData(
                     id = 1,
                     key = "pa_class",
-                    value = "${mainViewModel.className.toString()}"
+                    value = mainViewModel.className
                 ),
                 OrderMetaData(
                     id = 1,
@@ -714,15 +752,15 @@ fun getOrderDetails(
 
         billing = Billing(
             //TODO: Data Attached
-            first_name = mainViewModel.studentViewModel.studentDetails.value?.studentName?.split(" ")?.getOrNull(0) ?: "John",
-            last_name = mainViewModel.studentViewModel.studentDetails.value?.studentName?.split(" ")?.getOrNull(1) ?: "Doe",
-            address_1 = mainViewModel.studentViewModel.studentDetails.value?.billingAddress ?: "969 Market",
-            address_2 = "",
-            city = mainViewModel.studentViewModel.studentDetails.value?.city ?: "San Francisco",
-            state = mainViewModel.studentViewModel.studentDetails.value?.state ?: "CA",
-            postcode = mainViewModel.studentViewModel.studentDetails.value?.zipCode ?: "94103",
-            email = mainViewModel.studentViewModel.studentDetails.value?.emailAddress ?: "john.doe@example.com",
-            phone = mainViewModel.studentViewModel.studentDetails.value?.phoneNumber ?: "(555) 555-5555",
+            first_name = mainViewModel.studentViewModel.studentDetails.value?.studentName?.split(" ")?.getOrNull(0) ?: "",
+            last_name = mainViewModel.studentViewModel.studentDetails.value?.studentName?.split(" ")?.getOrNull(1) ?: "",
+            address_1 = mainViewModel.studentViewModel.studentDetails.value?.billingAddressLine1 ?: "",
+            address_2 = mainViewModel.studentViewModel.studentDetails.value?.billingAddressLine2 ?: "",
+            city = mainViewModel.studentViewModel.studentDetails.value?.billingCity ?: "",
+            state = mainViewModel.studentViewModel.studentDetails.value?.billingState ?: "",
+            postcode = mainViewModel.studentViewModel.studentDetails.value?.billingZipCode ?: "",
+            email = mainViewModel.studentViewModel.studentDetails.value?.emailAddress ?: "",
+            phone = mainViewModel.studentViewModel.studentDetails.value?.phoneNumber ?: "",
             country = "India",                          //TODO: Hard-coded
             company = "Kloc Technologies",              //TODO: Hard-coded
         ),
@@ -734,7 +772,7 @@ fun getOrderDetails(
         currency_symbol = "₹",
         customer_id = 101,
         customer_ip_address = "192.168.1.1",
-        customer_note = "Leave at the front door.",
+        customer_note = mainViewModel.studentViewModel.studentDetails.value?.note ?: "",
         customer_user_agent = "",
         date_completed = null,
         date_completed_gmt = null,
@@ -768,16 +806,16 @@ fun getOrderDetails(
         refunds = emptyList(),
         shipping = Shipping(
             //TODO: Data Attached
-            first_name = mainViewModel.studentViewModel.studentDetails.value?.studentName?.split(" ")?.getOrNull(0) ?: "John",
-            last_name = mainViewModel.studentViewModel.studentDetails.value?.studentName?.split(" ")?.getOrNull(1) ?: "Doe",
-            address_1 = mainViewModel.studentViewModel.studentDetails.value?.shipingAddress ?: "969 Market",
-            address_2 = "",
-            city = mainViewModel.studentViewModel.studentDetails.value?.city ?: "San Francisco",
-            state = mainViewModel.studentViewModel.studentDetails.value?.state ?: "CA",
-            postcode = mainViewModel.studentViewModel.studentDetails.value?.zipCode ?: "94103",
-            phone = mainViewModel.studentViewModel.studentDetails.value?.phoneNumber ?: "(555) 555-5555",
-            country = "India",                              //TODO: Hard-Coded
-            company = "Kloc Technologies",                  //TODO: Hard-Coded
+            first_name = mainViewModel.studentViewModel.studentDetails.value?.studentName?.split(" ")?.getOrNull(0) ?: "",
+            last_name = mainViewModel.studentViewModel.studentDetails.value?.studentName?.split(" ")?.getOrNull(1) ?: "",
+            address_1 = mainViewModel.studentViewModel.studentDetails.value?.shippingAddressLine1 ?: "",
+            address_2 = mainViewModel.studentViewModel.studentDetails.value?.shippingAddressLine2 ?: "",
+            city = mainViewModel.studentViewModel.studentDetails.value?.shippingCity ?: "",
+            state = mainViewModel.studentViewModel.studentDetails.value?.shippingState ?: "",
+            postcode = mainViewModel.studentViewModel.studentDetails.value?.shippingZipCode ?: "",
+            phone = mainViewModel.studentViewModel.studentDetails.value?.phoneNumber ?: "",
+            country = "India",
+            company = "Kloc Technologies",
         ),
         shipping_lines = emptyList(),
         shipping_tax = "0.00",
@@ -798,7 +836,7 @@ fun getOrderDetails(
         ),
         total = "${mainViewModel.cartViewModel.cartItems.value.sumOf { it.product.price * it.quantity }}",
         total_tax = "1.25",
-        transaction_id = transactionNumber,
+        transaction_id = ptrnNumber,
         version = "1.0"
     )
 }

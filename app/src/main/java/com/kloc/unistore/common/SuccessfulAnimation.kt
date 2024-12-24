@@ -1,4 +1,5 @@
 package com.kloc.unistore.common
+import android.text.Layout
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -12,9 +13,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,33 +35,36 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
+import com.kloc.unistore.R
 import kotlinx.coroutines.delay
 @Composable
 fun SuccessfulAnimation(message: String = "Successful!", onComplete: () -> Unit ) {
-    var startAnimation by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(targetValue = if (startAnimation) 1f else 0f, animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing), label = "")
-    val checkmarkAlpha by animateFloatAsState(targetValue = if (startAnimation) 1f else 0f, animationSpec = tween(durationMillis = 600, delayMillis = 600, easing = FastOutSlowInEasing), label = "")
-    val glow by animateFloatAsState(targetValue = if (startAnimation) 1.2f else 1f, animationSpec = infiniteRepeatable(animation = tween(durationMillis = 1500, easing = FastOutSlowInEasing), repeatMode = RepeatMode.Restart), label = "")
-    val messageAlpha by animateFloatAsState(targetValue = if (startAnimation) 1f else 0f, animationSpec = tween(durationMillis = 600, delayMillis = 1200, easing = LinearEasing), label = "")
-    LaunchedEffect(Unit) {
-        startAnimation = true
-        delay(3000)
-        onComplete()
-    }
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.7f)), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Box(contentAlignment = Alignment.Center) {
-                Canvas(modifier = Modifier.size(120.dp).scale(scale)) {
-                    drawCircle(color = Color.Green.copy(alpha = 0.3f), radius = size.minDimension / 2 * glow, style = Fill)
-                    drawCircle(color = Color.Green, radius = size.minDimension / 2, style = Fill)
-                    if (checkmarkAlpha > 0f) {
-                        drawLine(color = Color.White.copy(alpha = checkmarkAlpha), start = Offset(size.width * 0.3f, size.height * 0.6f), end = Offset(size.width * 0.45f, size.height * 0.75f), strokeWidth = 8f)
-                        drawLine(color = Color.White.copy(alpha = checkmarkAlpha), start = Offset(size.width * 0.45f, size.height * 0.75f), end = Offset(size.width * 0.7f, size.height * 0.4f), strokeWidth = 8f)
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-            if (messageAlpha > 0f) { BasicText(text = message, style = TextStyle(color = Color.White.copy(alpha = messageAlpha), fontSize = 22.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)) }
+    val lottieComposition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.success))
+    val lottieProgress by animateLottieCompositionAsState(lottieComposition, iterations = LottieConstants.IterateForever)
+
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            LottieAnimation(
+                composition = lottieComposition,
+                progress = lottieProgress,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp)
+            )
+            BasicText(
+                text = message,
+                style = TextStyle(
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+            )
+            onComplete()
         }
     }
 }

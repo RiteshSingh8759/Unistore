@@ -50,8 +50,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.layout.ContentScale
+import com.dokar.sonner.Toast
+import com.dokar.sonner.ToastType
+import com.dokar.sonner.Toaster
+import com.dokar.sonner.rememberToasterState
 import com.kloc.unistore.common.CommonProgressIndicator
 import com.kloc.unistore.model.viewModel.MainViewModel
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun ProductScreen(
@@ -92,7 +98,7 @@ fun ProductScreen(
             isLoading -> CommonProgressIndicator(":package:", "Loading product details...")
             productDetails != null -> {
                 mainViewModel.className=productDetails!!.name
-                Text(text = "Product Name: ${productDetails!!.name}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text(text = "${productDetails!!.name}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 LazyColumn(modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp)) { items(bundledProducts) { bundledProduct -> ProductCard(product = bundledProduct, mainViewModel = mainViewModel, productItemMap = productItemMap) } }
@@ -103,6 +109,10 @@ fun ProductScreen(
 }
 @Composable
 fun ProductCard(product: Product, mainViewModel: MainViewModel, productItemMap: SnapshotStateMap<Int, MutableList<Pair<Int, Int>>>) {
+
+    val toaster = rememberToasterState()
+    Toaster(state = toaster, darkTheme = true, maxVisibleToasts = 1)
+
     val initialItemPair = productItemMap[product.id]?.firstOrNull() ?: (0 to 0)
     var quantity by remember {  mutableStateOf(initialItemPair.second) }
     var selectedSize by remember { mutableStateOf(product.attributes.find { it.name == "Size" }?.options?.firstOrNull()) }
@@ -211,46 +221,61 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel, productItemMap: 
                 onValueChange = { selectedSize = it },
                 label = { Text("Enter Custom Size", fontSize = 12.sp) },
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxWidth().background(color = Color.White)
             )
+        } else {
+            Spacer(modifier = Modifier.height(5.dp))
         }
-        Spacer(modifier = Modifier.height(4.dp))
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(modifier = Modifier.fillMaxWidth().background(color = Color.White).padding(4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceEvenly) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { if (quantity > initialItemPair.second) quantity-- }, modifier = Modifier.size(24.dp)) {
+                IconButton(
+                    onClick = { if (quantity > initialItemPair.second) quantity-- },
+                    modifier = Modifier.padding(4.dp).size(24.dp)
+                ) {
                     Icon(Icons.Default.Remove, contentDescription = "Decrease", tint = Color.Black)
                 }
                 Text(text = quantity.toString(), fontSize = 16.sp)
-                IconButton(onClick = { quantity++ }, modifier = Modifier.size(24.dp)) {
+                IconButton(
+                    onClick = { quantity++ },
+                    modifier = Modifier.padding(4.dp).size(24.dp)
+                ) {
                     Icon(Icons.Default.Add, contentDescription = "Increase", tint = Color.Black)
                 }
             }
-        }
-        Button(
-            onClick = {
-                sizeType = if (isCustomSizeChecked) "Custom" else "Size"
-                variationId = product.variations.getOrElse(index) { 0 }.toString().toDouble().toInt()
-                val itemId = initialItemPair.first
-                // Default to "No Size" for products without size options
-                val sizeToAdd = if (product.attributes.find { it.name == "Size" }?.options?.isEmpty() == true) "No Size" else selectedSize
-                mainViewModel.showToast(
-                    mainViewModel.cartViewModel.addToCart(
+            Button(
+                onClick = {
+                    sizeType = if (isCustomSizeChecked) "Custom" else "Size"
+                    variationId =
+                        product.variations.getOrElse(index) { 0 }.toString().toDouble().toInt()
+                    val itemId = initialItemPair.first
+                    // Default to "No Size" for products without size options
+                    val sizeToAdd =
+                        if (product.attributes.find { it.name == "Size" }?.options?.isEmpty() == true) "No Size" else selectedSize
+                    val response = mainViewModel.cartViewModel.addToCart(
                         product = product,
                         quantity = quantity,
-                        min_Quantity=initialItemPair.second,
+                        min_Quantity = initialItemPair.second,
                         selectedSize = sizeToAdd,
                         selectedColor = selectedColor ?: "",
                         sizeType = sizeType,
                         variationId = variationId,
                         itemId = itemId
-                    )
-                )
-                quantity = initialItemPair.second
-            },
-            modifier = Modifier.height(32.dp),
-            enabled = quantity > 0
-        ) {
-            Text("Add to Cart", fontSize = 12.sp)
+                    ) // AJ : Removed Toast
+                    when (response) {
+                        "Product with selected size and color already exists.Quantity updated by $quantity" -> {
+                            toaster.show(Toast(message = response, type = ToastType.Info, duration = 2000.milliseconds))
+                        } // AJ : Toast Added
+                        "Product added to cart." -> {
+                            toaster.show(Toast(message = response, type = ToastType.Success, duration = 2000.milliseconds))
+                        } // AJ : Added Toast
+                    }
+                    quantity = initialItemPair.second
+                },
+                modifier = Modifier.height(32.dp),
+                enabled = quantity > 0
+            ) {
+                Text("Add to Cart", fontSize = 12.sp)
+            }
         }
     }
 }

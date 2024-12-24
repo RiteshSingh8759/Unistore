@@ -22,7 +22,7 @@ class CartViewModel @Inject constructor() : ViewModel() {
             _cartItems.value = _cartItems.value.map {
                 if (it == existingItem) it.copy(quantity = it.quantity + quantity) else it
             }
-            "Product with selected size already exists.Quantity updated by ${quantity}"
+            "Product with selected size and color already exists.Quantity updated by $quantity"
         } else {
             _cartItems.value = _cartItems.value + CartItem(product, quantity, min_Quantity,sizeType,itemId,variationId,selectedSize?:"", selectedColor)
             "Product added to cart."

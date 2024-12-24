@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,8 +23,14 @@ import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ExposedDropdownMenuBox
 import androidx.compose.material.ExposedDropdownMenuDefaults
+import androidx.compose.material.Icon
+import androidx.compose.material.Switch
+import androidx.compose.material.SwitchDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,11 +64,11 @@ import com.kloc.unistore.common.LoadingButton
 import com.kloc.unistore.firestoredb.module.DeviceModel
 import com.kloc.unistore.firestoredb.viewmodel.EmployeeViewModel
 import com.kloc.unistore.model.schoolViewModel.SchoolViewModel
+import com.kloc.unistore.model.viewModel.MainViewModel
 import com.kloc.unistore.navigation.Screen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
-
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -70,8 +77,11 @@ fun SchoolDetailsScreen(
     employeeViewModel: EmployeeViewModel,
     viewModel: SchoolViewModel = hiltViewModel()
 ) {
-    var slugId by remember { mutableStateOf("") }
     val toaster = rememberToasterState()
+    Toaster(state = toaster, darkTheme = true, maxVisibleToasts = 1)
+
+    var slugId by remember { mutableStateOf("") }
+    // AJ : Removed Toaster
     val schoolDetails by viewModel.schoolDetails.collectAsState(initial = null)
     var isLoading by remember { mutableStateOf(false) }
     var lastClickTime by remember { mutableLongStateOf(0L) }
@@ -106,13 +116,14 @@ fun SchoolDetailsScreen(
             label = { Text("Enter School Code") },
             modifier = Modifier.fillMaxWidth()
         )
+
         Spacer(modifier = Modifier.height(8.dp))
         // code for dropdown device id
 
         if (deviceListState.isLoading) {
             CircularProgressIndicator()
         }
-        else if (!deviceListState.data.isNullOrEmpty()) {
+        else if (deviceListState.data.isNotEmpty()) {
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded }
@@ -144,9 +155,11 @@ fun SchoolDetailsScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
         LoadingButton(
             text = "Submit",
             isLoading = isLoading,
+            isEnabled = slugId.isNotBlank() && !selectedDevice?.device?.device_id.isNullOrEmpty(), // AJ : Added Enable desaible functionality
             onClick = {
                 val currentTime = System.currentTimeMillis()
                 if (currentTime - lastClickTime > 2000) {
@@ -157,20 +170,14 @@ fun SchoolDetailsScreen(
                             if (deviceId != null) {
                                 userInput= employeeViewModel.updateUserInput(deviceId).toString()
                             } else {
-                                // Handle error: device_id is null
+                                toaster.show(Toast(message = "Please select device id", type = ToastType.Warning, duration = 2000.milliseconds))
                             }
                         }
 
                         isLoading = true
                         viewModel.getSchoolDetails(slugId)
                     } else {
-                        toaster.show(
-                            Toast(
-                                message = "Please enter a School Code",
-                                type = ToastType.Warning,
-                                duration = 2000.milliseconds
-                            )
-                        )
+                        toaster.show(Toast(message = "Please enter a School Code", type = ToastType.Warning, duration = 2000.milliseconds))
                     }
                 }
             },
@@ -180,33 +187,14 @@ fun SchoolDetailsScreen(
         LaunchedEffect(schoolDetails) {
             schoolDetails?.let {
                 if (it.isNotEmpty()) {
-                    toaster.show(
-                        Toast(
-                            message = "School details retrieved successfully",
-                            type = ToastType.Success,
-                            duration = 2000.milliseconds
-                        )
-                    )
+                    toaster.show(Toast(message = "School details retrieved successfully", type = ToastType.Success, duration = 2000.milliseconds))
                     navController.navigate(Screen.SchoolCategoryScreen.createRoute(schoolId = it.first().id))
                 } else {
-                    toaster.show(
-                        Toast(
-                            message = "Given ID is invalid",
-                            type = ToastType.Error,
-                            duration = 2000.milliseconds
-                        )
-                    )
+                    toaster.show(Toast(message = "Given Code is invalid", type = ToastType.Error, duration = 2000.milliseconds))
                     isLoading = false
                 }
             }
         }
-
-        Toaster(
-            state = toaster,
-            darkTheme = true,
-            maxVisibleToasts = 1
-        )
-
     }
 }
 
@@ -274,38 +262,6 @@ fun Carousel(
                         .size(8.dp)
                 )
             }
-        }
-    }
-}
-@Composable
-fun AboutUsSection() {
-    val scroll = rememberScrollState()
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            //   horizontalAlignment = Alignment.Start
-        ) {
-            Text(
-                text = "ABOUT US",
-                color = Color(0xFF08090A),
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Unistore is your one-stop solution for all educational needs. From uniforms and stationery to shoes and raingears, we cover a wide range of products to cater to your requirements. Our commitment to excellence drives us to continuously expand our product range, ensuring we meet the diverse needs of customers across India.\n\nTo provide a seamless shopping experience, we've partnered with top delivery services like FedEx for safe, contactless delivery. Dedicated customer support ensures that your journey with Unistore is smooth and hassle-free.",
-                fontSize = 14.sp,
-                color = Color.DarkGray,
-                modifier=Modifier.verticalScroll(scroll)
-            )
         }
     }
 }

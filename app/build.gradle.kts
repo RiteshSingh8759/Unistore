@@ -112,5 +112,6 @@ dependencies {
     // Mail dependency
     implementation ("com.sun.mail:android-mail:1.6.7")
     implementation ("com.sun.mail:android-activation:1.6.7")
-
+    //lottie
+    implementation ("com.airbnb.android:lottie-compose:6.1.0")
 }

@@ -6,6 +6,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -55,6 +56,7 @@ import com.kloc.unistore.screens.StudentDetailsScreen
 import com.kloc.unistore.util.Constants.CATEGORY_ID
 import com.kloc.unistore.util.Constants.PRODUCT_ID
 import com.kloc.unistore.util.Constants.SCHOOL_ID
+import com.kloc.unistore.navigation.Screen.*
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -75,96 +77,46 @@ fun NavGraph(
                 title = {
                     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.Center) {
                         when (currentRoute) {
-                            SchoolDetailsScreen.route -> {
-                                Image(
-                                    painter = painterResource(id = R.drawable.logo),
-                                    contentDescription = "Unistore Logo",
-                                    modifier = Modifier
-                                        .size(160.dp)
-                                        .padding(start = 5.dp, end = 8.dp)
-                                )
-                            }
-                            Screen.SchoolCategoryScreen.route -> {
-                                Text(
-                                    text = "Select Grade",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                            Screen.ProductDetailsScreen.route -> {
-                                Text(
-                                    text = "Select Gender",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                            Screen.ProductScreen.route -> {
-                                Text(
-                                    text = "Add Products",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                            Screen.CartScreen.route -> {
-                                Text(
-                                    text = "Cart",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                            Screen.OrderDetailsScreen.route -> {
-                                Text(
-                                    text = "Order Summary",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    textAlign = TextAlign.Center ,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp,
-                                )
-                            }
-                            else -> {
-                                Text("")
-                            }
+                            SchoolDetailsScreen.route -> { Image(painter = painterResource(id = R.drawable.logo), contentDescription = "Unistore Logo", modifier = Modifier.size(160.dp).padding(start = 5.dp, end = 8.dp)) }
+                            SchoolCategoryScreen.route -> { Text(text = "Select Grade", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp,) }
+                            ProductDetailsScreen.route -> { Text(text = "Select Gender", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp,) }
+                            ProductScreen.route -> { Text(text = "Add Products", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp,) }
+                            CartScreen.route -> { Text(text = "Cart", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp,) }
+                            StudentDetailsScreen.route -> { Text(text = "Student Details", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp,) }
+                            OrderDetailsScreen.route -> { Text(text = "Order Summary", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp,) }
+                            else -> { Text("") }
                         }
                     }
                 },
                 navigationIcon = {
-                    if (currentRoute == Screen.SchoolCategoryScreen.route) {
-                        BackHandler(enabled = true) { navController.navigate(SchoolDetailsScreen.route) { popUpTo(navController.graph.startDestinationId) { inclusive = true } } }
-                        IconButton(onClick = { navController.navigate(SchoolDetailsScreen.route) { popUpTo(navController.graph.startDestinationId) { inclusive = true } } }) { Icon(Icons.Default.ArrowBack, contentDescription = "Log Out") }
-                    } else if (currentRoute == Screen.ProductDetailsScreen.route) {
-                        if (mainViewModel.logOut) {
+                    if (currentRoute != SignInScreen.route) {
+                        if (currentRoute == SchoolCategoryScreen.route) {
                             BackHandler(enabled = true) { navController.navigate(SchoolDetailsScreen.route) { popUpTo(navController.graph.startDestinationId) { inclusive = true } } }
                             IconButton(onClick = { navController.navigate(SchoolDetailsScreen.route) { popUpTo(navController.graph.startDestinationId) { inclusive = true } } }) { Icon(Icons.Default.ArrowBack, contentDescription = "Log Out") }
-                        } else { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") } }
-                    } else if (currentRoute != Screen.SchoolDetailsScreen.route && currentRoute != Screen.ProductDetailsScreen.route) { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") } }
+                        } else if (currentRoute == ProductDetailsScreen.route) {
+                            if (mainViewModel.logOut) {
+                                BackHandler(enabled = true) { navController.navigate(SchoolDetailsScreen.route) { popUpTo(navController.graph.startDestinationId) { inclusive = true } } }
+                                IconButton(onClick = { navController.navigate(SchoolDetailsScreen.route) { popUpTo(navController.graph.startDestinationId) { inclusive = true } } }) { Icon(Icons.Default.ArrowBack, contentDescription = "Log Out") }
+                            } else { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") } }
+                        } else if (currentRoute != SchoolDetailsScreen.route && currentRoute != ProductDetailsScreen.route) { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") } }
+                    }
                 },
                 actions = {
-                    if (currentRoute == Screen.OrderDetailsScreen.route) {
-                        IconButton(onClick = { navController.navigate(Screen.StudentDetailsScreen.route) }) {
-                            Icon(Icons.Default.Person, contentDescription = "Student Details",
-
-                                )
-                        }
-                    }
-                    if (currentRoute != Screen.OrderDetailsScreen.route) {
-                        IconButton(onClick = { navController.navigate(Screen.CartScreen.route) }) {
-                            BadgedBox(
-                                badge = {
-                                    Badge {
-                                        Text(mainViewModel.cartViewModel.cartItems.collectAsState().value.size.toString())
-                                    }
-                                }
-                            ) {
-                                Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
+                    when (currentRoute) {
+                        OrderDetailsScreen.route -> {
+                            IconButton(onClick = { navController.navigate(StudentDetailsScreen.route) }) {
+                                Icon(Icons.Default.Person, contentDescription = "Student Details")
                             }
+                        }
+                        ProductScreen.route -> {
+                            IconButton(onClick = { navController.navigate(CartScreen.route) }) {
+                                BadgedBox(badge = { Badge { Text(mainViewModel.cartViewModel.cartItems.collectAsState().value.size.toString()) } }) {
+                                    Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
+                                }
+                            }
+                        }
+                        else -> {
+                            Spacer(modifier = Modifier.size(48.dp))
                         }
                     }
                 }
@@ -172,17 +124,17 @@ fun NavGraph(
         }
     )
     { paddingValues ->
-        NavHost(navController = navController, startDestination = Screen.SignInScreen.route, Modifier.padding(paddingValues)) {
+        NavHost(navController = navController, startDestination = SignInScreen.route, Modifier.padding(paddingValues)) {
 
-            composable(route =Screen.SignInScreen.route  ) {
-                SignInScreen(navController =navController,employeeViewModel=employeesViewModel )
+            composable(route =SignInScreen.route  ) {
+                SignInScreen(navController =navController,employeeViewModel=employeesViewModel , mainViewModel= mainViewModel)
             }
             composable(route = SchoolDetailsScreen.route) {
                 schoolViewModel.resetSchoolDetails() // AJ
                 SchoolDetailsScreen(navController = navController,employeeViewModel=employeesViewModel)
             }
             composable(
-                route = Screen.SchoolCategoryScreen.route,
+                route = SchoolCategoryScreen.route,
                 arguments = listOf(navArgument(SCHOOL_ID) { type = NavType.IntType })
             ) { backStackEntry ->
                 val schoolId = backStackEntry.arguments?.getInt(SCHOOL_ID)
@@ -192,7 +144,7 @@ fun NavGraph(
                 }
             }
             composable(
-                route = Screen.ProductDetailsScreen.route,
+                route = ProductDetailsScreen.route,
                 arguments = listOf(navArgument(CATEGORY_ID) { type = NavType.IntType })
             ) { backStackEntry ->
                 val categoryId = backStackEntry.arguments?.getInt(CATEGORY_ID)
@@ -203,7 +155,7 @@ fun NavGraph(
                 }
             }
             composable(
-                route = Screen.ProductScreen.route,
+                route = ProductScreen.route,
                 arguments = listOf(navArgument(PRODUCT_ID) { type = NavType.IntType })
             ) { backStackEntry ->
                 val productId = backStackEntry.arguments?.getInt(PRODUCT_ID) ?: 0
@@ -211,15 +163,15 @@ fun NavGraph(
                 ProductScreen(navController = navController, productId = productId,viewModel=productViewModel, mainViewModel = mainViewModel)
             }
             // Cart Screen
-            composable(route = Screen.CartScreen.route) {
+            composable(route = CartScreen.route) {
                 CartScreen(navController = navController, mainViewModel)
             }
             // Order Details Screen
-            composable(route = Screen.OrderDetailsScreen.route) {
+            composable(route = OrderDetailsScreen.route) {
                 OrderDetailsScreen(navController = navController, mainViewModel,productViewModel=productViewModel,employeeViewModel=employeesViewModel)
             }
             // Student details screen
-            composable(route = Screen.StudentDetailsScreen.route) {
+            composable(route = StudentDetailsScreen.route) {
                 StudentDetailsScreen(navController = navController, mainViewModel)
             }
         }

@@ -38,14 +38,10 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun CommonProgressIndicator(type: String, message: String, buttonName: String = "Submit", onClick: (() -> Unit)? = null) {
     val infiniteTransition = rememberInfiniteTransition(label = "")
-    val scale by infiniteTransition.animateFloat(initialValue = 1f, targetValue = 1.3f, animationSpec = infiniteRepeatable(animation = tween(durationMillis = 600, easing = LinearEasing), repeatMode = RepeatMode.Reverse), label = "")
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(Color.Black.copy(alpha = 0.7f))
-        .padding(16.dp), contentAlignment = Alignment.Center) {
+    Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, trackColor = Color.Blue)
-            Spacer(modifier = Modifier.height(24.dp))
+            CircularProgressIndicator(color = Color.Black, strokeWidth = 5.dp, trackColor = Color.Gray)
+            Spacer(modifier = Modifier.height(12.dp))
             BasicText(text = message, style = TextStyle(color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center))
             if (onClick != null) {
                 Spacer(modifier = Modifier.height(24.dp))
