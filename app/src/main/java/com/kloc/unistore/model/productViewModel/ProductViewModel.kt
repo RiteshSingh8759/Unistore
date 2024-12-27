@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -56,25 +57,30 @@ class ProductViewModel @Inject constructor(
 
 
     fun fetchBundledProducts(productIds: List<Int>) {
-        val semaphore = Semaphore(10) // Limit concurrency to 10
         viewModelScope.launch {
             try {
-                val products = productIds.map { id ->
-                    async(Dispatchers.IO) {
-                        semaphore.acquire()
-                        try {
-                            repository.fetchProductDetailsById(id)
-                        } finally {
-                            semaphore.release()
-                        }
+                // Convert the list of IDs to a comma-separated string
+                val includeIds = productIds.joinToString(",")
+
+                // Fetch products by list of IDs in one API call
+                val response = repository.fetchProductsByIds(includeIds)
+
+                if (response.isSuccessful) {
+                    withContext(Dispatchers.Main) {
+                        // Update the bundled products state with the response body
+                        _bundledProducts.value = response.body() ?: emptyList()
                     }
-                }.awaitAll()
-                _bundledProducts.value = products.filterNotNull()
+                } else {
+                    println("Error fetching products: ${response.errorBody()?.string()}")
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
     }
+
+
+
     fun resetProductData()
     {
         _products.value = emptyList()

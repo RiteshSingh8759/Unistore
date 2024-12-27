@@ -4,6 +4,7 @@ import com.kloc.unistore.entity.product.Product
 import com.kloc.unistore.service.UnistoreApiService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import retrofit2.Response
 import javax.inject.Inject
 
 class ProductRepository @Inject constructor() {
@@ -17,4 +18,8 @@ class ProductRepository @Inject constructor() {
         val response = apiService.getProductById(productId)
         return if (response.isSuccessful) response.body() else null
     }
+    suspend fun fetchProductsByIds(includeIds: String): Response<List<Product>> {
+        return apiService.getProductsByIds(include = includeIds)
+    }
+
 }

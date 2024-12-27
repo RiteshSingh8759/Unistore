@@ -15,6 +15,7 @@ import com.kloc.unistore.model.viewModel.MainViewModel
 import com.kloc.unistore.navigation.NavGraph
 import com.kloc.unistore.ui.theme.UnistoreTheme
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.appcompat.app.AppCompatDelegate
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -22,9 +23,10 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         setContent {
             mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
-            UnistoreTheme {
+            UnistoreTheme(darkTheme = false) {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),

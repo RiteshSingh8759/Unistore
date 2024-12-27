@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -78,12 +79,12 @@ fun NavGraph(
                     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.Center) {
                         when (currentRoute) {
                             SchoolDetailsScreen.route -> { Image(painter = painterResource(id = R.drawable.logo), contentDescription = "Unistore Logo", modifier = Modifier.size(160.dp).padding(start = 5.dp, end = 8.dp)) }
-                            SchoolCategoryScreen.route -> { Text(text = "Select Grade", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp,) }
-                            ProductDetailsScreen.route -> { Text(text = "Select Gender", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp,) }
-                            ProductScreen.route -> { Text(text = "Add Products", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp,) }
-                            CartScreen.route -> { Text(text = "Cart", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp,) }
-                            StudentDetailsScreen.route -> { Text(text = "Student Details", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp,) }
-                            OrderDetailsScreen.route -> { Text(text = "Order Summary", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp,) }
+                            SchoolCategoryScreen.route -> { Text(text = "Select Grade", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
+                            ProductDetailsScreen.route -> { Text(text = "Select Gender", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
+                            ProductScreen.route -> { Text(text = "Add Products", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
+                            CartScreen.route -> { Text(text = "Cart", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
+                            StudentDetailsScreen.route -> { Text(text = "Student Details", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
+                            OrderDetailsScreen.route -> { Text(text = "Order Summary", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
                             else -> { Text("") }
                         }
                     }
@@ -172,7 +173,7 @@ fun NavGraph(
             }
             // Student details screen
             composable(route = StudentDetailsScreen.route) {
-                StudentDetailsScreen(navController = navController, mainViewModel)
+                StudentDetailsScreen(navController = navController, mainViewModel,employeesViewModel)
             }
         }
     }

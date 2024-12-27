@@ -5,6 +5,8 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bumptech.glide.Glide.init
+import com.kloc.unistore.firestoredb.module.AddressModel
 import com.kloc.unistore.firestoredb.module.DeviceModel
 import com.kloc.unistore.firestoredb.module.EmployeeModel
 import com.kloc.unistore.firestoredb.repository.EmployeeRepository
@@ -29,7 +31,8 @@ class EmployeeViewModel@Inject constructor(
     private val _deviceList:MutableState<FirestoreDeviceState> = mutableStateOf(FirestoreDeviceState())
     val deviceList: State<FirestoreDeviceState> = _deviceList
 
-
+    private val _schoolAddress:MutableState<FirestoreAddressState> = mutableStateOf(FirestoreAddressState())
+    val address: State<FirestoreAddressState> =_schoolAddress
 
     init {
         getDevice()
@@ -80,9 +83,27 @@ class EmployeeViewModel@Inject constructor(
             }
         }
     }
-
-
-
+    fun getAddressBySchoolId(school_id: String)= viewModelScope.launch {
+        employeeRepository.getAddressById(school_id).collect {
+            when (it) {
+                is ResultState.Success -> {
+                    _schoolAddress.value = FirestoreAddressState(
+                        data = it.data
+                    )
+                }
+                is ResultState.Failure -> {
+                    _schoolAddress.value = FirestoreAddressState(
+                        error = it.toString()
+                    )
+                }
+                ResultState.Loading -> {
+                    _schoolAddress.value = FirestoreAddressState(
+                        isLoading = true
+                    )
+                }
+            }
+        }
+    }
 }
 
 data class FirestoreState(
@@ -97,6 +118,11 @@ data class singleState(
 )
 data class FirestoreDeviceState(
     val data:List<DeviceModel> = emptyList(),
+    val error:String = "",
+    val isLoading:Boolean = false
+)
+data class FirestoreAddressState(
+    val data:AddressModel? = null,
     val error:String = "",
     val isLoading:Boolean = false
 )

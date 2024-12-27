@@ -107,7 +107,7 @@ fun SchoolDetailsScreen(
         Text(
             text = "Welcome ${userData.data?.employee?.name ?: "User"}",
             fontSize = 24.sp,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Medium
         )
         OutlinedTextField(
@@ -187,6 +187,7 @@ fun SchoolDetailsScreen(
         LaunchedEffect(schoolDetails) {
             schoolDetails?.let {
                 if (it.isNotEmpty()) {
+                    employeeViewModel.getAddressBySchoolId(slugId)
                     toaster.show(Toast(message = "School details retrieved successfully", type = ToastType.Success, duration = 2000.milliseconds))
                     navController.navigate(Screen.SchoolCategoryScreen.createRoute(schoolId = it.first().id))
                 } else {

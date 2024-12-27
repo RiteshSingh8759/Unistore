@@ -1,6 +1,6 @@
 package com.kloc.unistore.screens
 
-import android.util.Log
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +25,9 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,8 +38,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.kloc.unistore.common.CommonProgressIndicator
 import com.kloc.unistore.entity.product.Product
-import com.kloc.unistore.firestoredb.viewmodel.EmployeeViewModel
 import com.kloc.unistore.navigation.Screen
 
 @Composable
@@ -45,10 +48,13 @@ fun ProductDetailScreen(
     categoryId: Int,
     viewModel: ProductViewModel
 ) {
+    var isLoding by remember { mutableStateOf(true) }
     LaunchedEffect(categoryId) {
         viewModel.getProducts(categoryId)
     }
+    if (isLoding) { CommonProgressIndicator() }
     val products by viewModel.products.collectAsState()
+    LaunchedEffect(products) { isLoding = products.isEmpty() }
 
     Box(
         modifier = Modifier

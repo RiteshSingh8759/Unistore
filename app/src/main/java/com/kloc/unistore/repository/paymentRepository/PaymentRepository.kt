@@ -1,15 +1,16 @@
 package com.kloc.unistore.repository.paymentRepository
 
-
+import android.content.Context
 import android.util.Log
 import com.kloc.unistore.entity.pineLabs.billing.UploadBilledTransaction
 import com.kloc.unistore.entity.pineLabs.response.PineLabResponse
 import com.kloc.unistore.entity.pineLabs.status.GetCloudBasedTxnStatus
-import com.kloc.unistore.service.PineLabsApiService
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
-
-class PaymentRepository @Inject constructor() {
-    private val apiService = PineLabsApiService.create()
+class PaymentRepository @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
+    private val apiService = PineLabsApiService.create(context)
     // Function to initiate a payment
     suspend fun initiatePayment(request: UploadBilledTransaction): PineLabResponse? {
         return try {

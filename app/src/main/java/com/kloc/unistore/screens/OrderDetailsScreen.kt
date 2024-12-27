@@ -56,11 +56,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import com.dokar.sonner.Toast
 import com.dokar.sonner.ToastType
 import com.dokar.sonner.Toaster
@@ -74,6 +73,7 @@ import com.kloc.unistore.entity.pineLabs.billing.UploadBilledTransaction
 import com.kloc.unistore.entity.pineLabs.status.GetCloudBasedTxnStatus
 import com.kloc.unistore.firestoredb.viewmodel.EmployeeViewModel
 import com.kloc.unistore.model.paymentViewModel.PaymentViewModel
+import com.kloc.unistore.navigation.Screen
 import com.kloc.unistore.util.Constants
 import kotlinx.coroutines.delay
 import java.util.UUID
@@ -110,8 +110,9 @@ fun OrderDetailsScreen(
                 LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
                     items(cartItems) { cartItem ->
                         ProductDetailItem(cartItem)
-                        Divider(
+                        HorizontalDivider(
                             modifier = Modifier.padding(vertical = 4.dp),
+                            thickness = 1.dp, // Specify the thickness of the divider
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
                         )
                     }
@@ -121,7 +122,7 @@ fun OrderDetailsScreen(
             Spacer(modifier = Modifier.height(16.dp))
             OrderSectionCard(title = "Shipping Address") {
                 Text(
-                    text = studentDetails?.shippingAddressLine1 ?: "No shipping address provided",
+                    text = studentDetails?.billingAddressLine1 ?: "No billing address provided",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -175,7 +176,9 @@ fun OrderDetailsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
             Button(
-                onClick = { paymentInitiate = true },
+                onClick = {
+                    paymentInitiate = true
+                          },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -192,7 +195,6 @@ fun OrderDetailsScreen(
         if (paymentInitiate) {
             Box(modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
                 .clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
                 if (totalAmount < 100) {
                     toaster.show(Toast(message = "Payment amount should be atleast 1 rupees", type = ToastType.Error, duration = 2000.milliseconds))
@@ -210,7 +212,8 @@ fun OrderDetailsScreen(
                         onCancel = {
                             paymentViewModel.resetPaymentData()
                             paymentInitiate = false },
-                        employeeViewModel
+                        employeeViewModel,
+                        navController
                     )
                 }
             }
@@ -294,7 +297,8 @@ fun PaymentProcessingIndicator(
     selectedPaymentType: Int,
     onComplete: () -> Unit,
     onCancel: () -> Unit,
-    employeeViewModel: EmployeeViewModel
+    employeeViewModel: EmployeeViewModel,
+    navController: NavController
 ) {
     val toaster = rememberToasterState()
     Toaster(state = toaster, darkTheme = true, maxVisibleToasts = 1)
@@ -318,10 +322,10 @@ fun PaymentProcessingIndicator(
     var currentAnimation by remember { mutableStateOf("Payment Processing") }
     // Showing Animations
     when (currentAnimation) {
-        "Payment Processing" -> CommonProgressIndicator("", "Processing Payment...\nRemaining Time: ${String.format("%02d:%02d", remainingTime / 60, remainingTime % 60)}", "Cancel Payment") {
+        "Payment Processing" -> CommonProgressIndicator("Processing Payment...\nRemaining Time: ${String.format("%02d:%02d", remainingTime / 60, remainingTime % 60)}", "Cancel Payment") {
             onCancel()
         }
-        "Payment Successful Creating Order" -> CommonProgressIndicator("", "Payment Successful!\nCreating Order...")
+        "Payment Successful Creating Order" -> CommonProgressIndicator("Payment Successful!\nCreating Order...")
         "Payment Successful Order Created" -> SuccessfulAnimation("Payment Successful!\nOrder Id: $orderId") { onComplete() }
         else -> onCancel()
     }
@@ -331,9 +335,28 @@ fun PaymentProcessingIndicator(
             orderViewModel.placeOrder(getOrderDetails(mainViewModel, productViewModel, selectedPaymentType, "${ptrnNumber}",employeeViewModel)) { order ->
                 orderId = order?.id ?: 0
                 createOrder = false
-                currentAnimation = if (order != null) "Payment Successful Order Created" else ""
-                order?.let { toaster.show(Toast(message = "Order Created!", type = ToastType.Success, duration = 2000.milliseconds))
-                } ?: run { toaster.show(Toast(message = "Order Creation Failed.", type = ToastType.Error, duration = 2000.milliseconds)) }
+                currentAnimation = if (order != null) {"Payment Successful Order Created" } else{ ""}
+                if (order != null) {
+                    // Show success toast
+                    toaster.show(
+                        Toast(
+                            message = "Order Created!",
+                            type = ToastType.Success,
+                            duration = 2000.milliseconds
+                        )
+                    )
+                    // Navigate to SchoolCategoryScreen
+                    navController.navigate(Screen.SchoolCategoryScreen.route)
+                } else {
+                    // Show failure toast
+                    toaster.show(
+                        Toast(
+                            message = "Order Creation Failed.",
+                            type = ToastType.Error,
+                            duration = 2000.milliseconds
+                        )
+                    )
+                }
             }
         }
     }
@@ -666,7 +689,7 @@ fun getOrderDetails(
                     value = stampDataMap
                 )
             ).filter { it.value.toString().isNotBlank() },
-            name = mainViewModel.className,
+            name = cartItem.product.name,
             parent_name = mainViewModel.studentViewModel.studentDetails.value?.parentName.orEmpty(),
             price = cartItem.product.price,
             product_id = cartItem.product.id,
@@ -792,6 +815,11 @@ fun getOrderDetails(
                 id = 1,
                 key = "staff_id",
                 value = "${staffDetails?.id} ${staffDetails?.name}"
+            ),
+            MetaDataX(
+                id = 2,
+                key = "addressType",
+                value = "${if(mainViewModel.typeOfAddress) "school delivery" else ""}"
             )
         ),
         needs_payment = false,
@@ -808,14 +836,14 @@ fun getOrderDetails(
             //TODO: Data Attached
             first_name = mainViewModel.studentViewModel.studentDetails.value?.studentName?.split(" ")?.getOrNull(0) ?: "",
             last_name = mainViewModel.studentViewModel.studentDetails.value?.studentName?.split(" ")?.getOrNull(1) ?: "",
-            address_1 = mainViewModel.studentViewModel.studentDetails.value?.shippingAddressLine1 ?: "",
-            address_2 = mainViewModel.studentViewModel.studentDetails.value?.shippingAddressLine2 ?: "",
-            city = mainViewModel.studentViewModel.studentDetails.value?.shippingCity ?: "",
-            state = mainViewModel.studentViewModel.studentDetails.value?.shippingState ?: "",
-            postcode = mainViewModel.studentViewModel.studentDetails.value?.shippingZipCode ?: "",
+            address_1 = mainViewModel.studentViewModel.studentDetails.value?.billingAddressLine1 ?: "",
+            address_2 = mainViewModel.studentViewModel.studentDetails.value?.billingAddressLine2 ?: "",
+            city = mainViewModel.studentViewModel.studentDetails.value?.billingCity ?: "",
+            state = mainViewModel.studentViewModel.studentDetails.value?.billingState ?: "",
+            postcode = mainViewModel.studentViewModel.studentDetails.value?.billingZipCode ?: "",
             phone = mainViewModel.studentViewModel.studentDetails.value?.phoneNumber ?: "",
             country = "India",
-            company = "Kloc Technologies",
+            company = "kLoc Technologies",
         ),
         shipping_lines = emptyList(),
         shipping_tax = "0.00",

@@ -2,6 +2,7 @@ package com.kloc.unistore.firestoredb.repository
 
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
+import com.kloc.unistore.firestoredb.module.AddressModel
 import com.kloc.unistore.firestoredb.module.DeviceModel
 import com.kloc.unistore.firestoredb.module.EmployeeModel
 import com.kloc.unistore.util.ResultState
@@ -65,6 +66,43 @@ class EmployeeRepositoryImpl @Inject constructor(
             }.addOnFailureListener {
                 trySend(ResultState.Failure(it))
             }
+        awaitClose {
+            close()
+        }
+    }
+
+    override fun getAddressById(school_id: String): Flow<ResultState<AddressModel>> = callbackFlow {
+        trySend(ResultState.Loading)
+
+        db.collection("address")
+            .whereEqualTo("school_id", school_id)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                // If no documents are found, return an empty result.
+                val address = querySnapshot.map { data ->
+                    AddressModel(
+                        address = AddressModel.FirestoreAddress(
+                            school_id = data["school_id"] as String?,
+                            addressLine1 = data["addressLine1"] as String?,
+                            addressLine2 = data["addressLine2"] as String,
+                            city = data["city"] as String,
+                            state = data["state"] as String,
+                            zipcode = data["zipcode"] as String,
+                            country = data["country"] as String,
+                        ),
+                        key = data.id
+                    )
+                }
+
+                if (address.isNotEmpty()) {
+                    trySend(ResultState.Success(address.first())) // Send first user if exists
+                } else {
+                    trySend(ResultState.Failure(Exception("No address found with this school_id"))) // Handle empty list case
+                }
+            }.addOnFailureListener {
+                trySend(ResultState.Failure(it)) // Handle failure
+            }
+
         awaitClose {
             close()
         }

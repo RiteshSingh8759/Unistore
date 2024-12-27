@@ -114,4 +114,10 @@ dependencies {
     implementation ("com.sun.mail:android-activation:1.6.7")
     //lottie
     implementation ("com.airbnb.android:lottie-compose:6.1.0")
+
+    implementation("androidx.room:room-ktx:2.6.1")
+    implementation ("androidx.compose.material3:material3:1.3.1")
+    implementation ("androidx.compose.material3:material3-window-size-class:1.3.1")
+
+    implementation ("androidx.appcompat:appcompat:1.6.1")
 }

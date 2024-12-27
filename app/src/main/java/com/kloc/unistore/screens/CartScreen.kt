@@ -105,8 +105,10 @@ fun CartProductCard(cartProduct: CartItem, mainViewModel: MainViewModel) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = cartProduct.product.name, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 2, color = Color.Black)
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(text = "Size: " + cartProduct.size, fontSize = 15.sp, color = Color.DarkGray)
+                    if (cartProduct.size.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(text = "Size: " + cartProduct.size, fontSize = 15.sp, color = Color.DarkGray)
+                    }
                 }
             }
 
@@ -115,7 +117,7 @@ fun CartProductCard(cartProduct: CartItem, mainViewModel: MainViewModel) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = if (cartProduct.product.stock_status == "instock") "In Stock" else "Out of Stock",
-                    color = if (cartProduct.product.stock_status == "instock") Color.Green else Color.Red,
+                    color = if (cartProduct.product.stock_status == "instock") Color(0xFF388E3C) else Color(0xFFB71C1C),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )

@@ -28,7 +28,8 @@ fun CommonDropdownMenu(
         OutlinedTextField(
             value = selectedItem.toString(),
             onValueChange = {},
-            label = { Text(selectedItem.ifEmpty { "Select $label" }) },
+//            label = { Text(selectedItem.ifEmpty { "Select $label" }) },
+            label = { Text(label) },
             modifier = modifier,
             readOnly = true,
             trailingIcon = {

@@ -9,11 +9,6 @@ data class Student(
     val billingCity: String,
     val billingState: String,
     val billingZipCode: String,
-    val shippingAddressLine1: String,
-    val shippingAddressLine2: String,
-    val shippingCity: String,
-    val shippingState: String,
-    val shippingZipCode: String,
     val selectedClass: String,
     val gender: String,
     val note: String

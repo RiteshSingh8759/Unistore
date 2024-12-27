@@ -47,6 +47,11 @@ interface UnistoreApiService {
         @Body order: Order
     ): Response<Order>
 
+    @GET("products")
+    suspend fun getProductsByIds(
+        @Query("include") include: String
+    ): Response<List<Product>>
+
     companion object {
         private const val BASE_URL = "https://wordpress-698237-3902553.cloudwaysapps.com/wp-json/wc/v3/"
         private const val USERNAME = "ck_aa0034b814776010e00b55e7b6348b0a457537bd"

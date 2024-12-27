@@ -18,12 +18,13 @@ class MainViewModel @Inject constructor(
     private val application: Application // Inject the Application context
 ) : ViewModel() {
     var logOut by mutableStateOf(false)
-    var skipAddress by mutableStateOf(false)
+    var schoolAddress by mutableStateOf(false)
     var className by  mutableStateOf("")
     // Singleton instance of CartViewModel
     val cartViewModel: CartViewModel by lazy {
         CartViewModel()
     }
+    var typeOfAddress by mutableStateOf(false)
     // Singleton instance of StudentViewModel
     val studentViewModel: StudentViewModel by lazy {
         StudentViewModel()

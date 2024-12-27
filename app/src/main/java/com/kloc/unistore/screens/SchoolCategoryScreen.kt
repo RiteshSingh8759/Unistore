@@ -52,7 +52,7 @@ fun SchoolCategoryScreen(
     }
     Box(modifier = Modifier.fillMaxSize()) {
         if (categories.isEmpty()) {
-            CommonProgressIndicator(type = "", message ="Loading" )
+            CommonProgressIndicator()
             if (isCategories) {
                 mainViewModel.logOut = true
                 navController.navigate(Screen.ProductDetailsScreen.createRoute(schoolId))
