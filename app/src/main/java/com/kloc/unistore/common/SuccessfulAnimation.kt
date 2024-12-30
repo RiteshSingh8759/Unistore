@@ -45,10 +45,13 @@ import kotlinx.coroutines.delay
 @Composable
 fun SuccessfulAnimation(message: String = "Successful!", onComplete: () -> Unit ) {
     val lottieComposition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.success))
-    val lottieProgress by animateLottieCompositionAsState(lottieComposition, iterations = LottieConstants.IterateForever)
-
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    val lottieProgress by animateLottieCompositionAsState(lottieComposition, iterations = 1)
+    // Trigger onComplete after the animation finishes
+    LaunchedEffect(lottieProgress) { if (lottieProgress == 1f) { onComplete() } }
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(Color.Black.copy(alpha = 0.7f)), Alignment.Center) {
+        Column {
             LottieAnimation(
                 composition = lottieComposition,
                 progress = lottieProgress,
@@ -56,15 +59,19 @@ fun SuccessfulAnimation(message: String = "Successful!", onComplete: () -> Unit 
                     .fillMaxWidth()
                     .height(400.dp)
             )
+            Spacer(modifier = Modifier.height(100.dp))
+        }
+        Column {
+            Spacer(modifier = Modifier.height(100.dp))
             BasicText(
                 text = message,
+                color = { Color.White }, // Directly use the Color.White
                 style = TextStyle(
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 )
             )
-            onComplete()
         }
     }
 }

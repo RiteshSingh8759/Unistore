@@ -298,12 +298,10 @@ fun PaymentProcessingIndicator(
     onComplete: () -> Unit,
     onCancel: () -> Unit,
     employeeViewModel: EmployeeViewModel,
-    navController: NavController
+    navController: NavController,
 ) {
     val toaster = rememberToasterState()
     Toaster(state = toaster, darkTheme = true, maxVisibleToasts = 1)
-
-    var isPaymentInitiated by remember { mutableStateOf(false) }
     var ptrnNumber by remember { mutableStateOf(0) }
     var createOrder by remember { mutableStateOf(false) }
     var pollingAttempts by remember { mutableStateOf(0) }
@@ -322,57 +320,43 @@ fun PaymentProcessingIndicator(
     var currentAnimation by remember { mutableStateOf("Payment Processing") }
     // Showing Animations
     when (currentAnimation) {
-        "Payment Processing" -> CommonProgressIndicator("Processing Payment...\nRemaining Time: ${String.format("%02d:%02d", remainingTime / 60, remainingTime % 60)}", "Cancel Payment") {
-            onCancel()
+        "Payment Processing" -> CommonProgressIndicator(message = "Processing Payment\nRemaining Time: ${String.format("%02d:%02d", remainingTime / 60, remainingTime % 60)}", buttonName = "Cancel Payment", dotAnimation = false) { onCancel() }
+        "Payment Successful Creating Order" -> CommonProgressIndicator("Payment Successful!\nCreating Order")
+        "Payment Successful Order Created" -> SuccessfulAnimation("Payment Successful!\nOrder Id: $orderId") {
+            toaster.show(Toast(message = "Order Created!", type = ToastType.Success, duration = 2000.milliseconds))
+            onComplete()
+            navController.popBackStack(Screen.SchoolCategoryScreen.route, inclusive = false)
         }
-        "Payment Successful Creating Order" -> CommonProgressIndicator("Payment Successful!\nCreating Order...")
-        "Payment Successful Order Created" -> SuccessfulAnimation("Payment Successful!\nOrder Id: $orderId") { onComplete() }
         else -> onCancel()
     }
     // Creating Order And insuring order create once only
-    LaunchedEffect(createOrder) {
-        if (createOrder) {
-            orderViewModel.placeOrder(getOrderDetails(mainViewModel, productViewModel, selectedPaymentType, "${ptrnNumber}",employeeViewModel)) { order ->
-                orderId = order?.id ?: 0
-                createOrder = false
-                currentAnimation = if (order != null) {"Payment Successful Order Created" } else{ ""}
+    if (createOrder) {
+        LaunchedEffect(Unit) {
+            orderViewModel.placeOrder(getOrderDetails(mainViewModel, productViewModel, selectedPaymentType, "${ptrnNumber}",employeeViewModel))
+            { order ->
                 if (order != null) {
-                    // Show success toast
-                    toaster.show(
-                        Toast(
-                            message = "Order Created!",
-                            type = ToastType.Success,
-                            duration = 2000.milliseconds
-                        )
-                    )
-                    // Navigate to SchoolCategoryScreen
-                    navController.navigate(Screen.SchoolCategoryScreen.route)
-                } else {
-                    // Show failure toast
-                    toaster.show(
-                        Toast(
-                            message = "Order Creation Failed.",
-                            type = ToastType.Error,
-                            duration = 2000.milliseconds
-                        )
-                    )
+                    if (orderId == 0 ) {
+                        orderId = order.id ?: 0
+                        currentAnimation = "Payment Successful Order Created"
+                    }
+                }
+                else {
+                    toaster.show(Toast(message = "Order Creation Failed.", type = ToastType.Error, duration = 2000.milliseconds))
                 }
             }
         }
-    }
-    // Showing live remaining time for payment
-    LaunchedEffect(remainingTime) {
-        if (remainingTime > 0) {
-            delay(1000L)
-            remainingTime -= 1
-        } else {
-            onCancel()
+    } else {
+        // Showing live remaining time for payment
+        LaunchedEffect(remainingTime) {
+            if (remainingTime > 0) {
+                delay(1000L)
+                remainingTime -= 1
+            } else {
+                onCancel()
+            }
         }
-    }
-    // Sending request to Pine Lab machine for payment
-    LaunchedEffect(isPaymentInitiated) {
-        if (!isPaymentInitiated){
-            isPaymentInitiated = true
+        // Sending request to Pine Lab machine for payment
+        LaunchedEffect(Unit) {
             val paymentRequest = UploadBilledTransaction(
                 TransactionNumber = transactionNumber,
                 SequenceNumber = Constants.SEQUENCE_NUMBER,
@@ -392,67 +376,47 @@ fun PaymentProcessingIndicator(
             )
             paymentViewModel.initiatePayment(paymentRequest)
         }
-    }
-    // Getting payment Response from Pine Lab machine
-    LaunchedEffect(paymentResponse) {
-        paymentResponse?.let { response ->
-            ptrnNumber = response.PlutusTransactionReferenceID ?: 0
-            Log.d("debug", "PTRM : $ptrnNumber")
-            if (response.ResponseCode == 0) {
-                pollingAttempts = 0
-                while (pollingAttempts < maxPollingAttempts) {
-                    paymentViewModel.getTransactionStatus(
-                        GetCloudBasedTxnStatus(
-                            MerchantID = Constants.MERCHANT_ID,
-                            SecurityToken = Constants.SECURITY_TOKEN,
-                            ClientID = Constants.CLIENT_ID,
-                            UserID = Constants.USER_ID,
-                            StoreID = Constants.STORE_ID,
-                            PlutusTransactionReferenceID = ptrnNumber
+        // Getting payment Response from Pine Lab machine
+        LaunchedEffect(paymentResponse) {
+            paymentResponse?.let { response ->
+                ptrnNumber = response.PlutusTransactionReferenceID ?: 0
+                Log.d("debug1", "PTRM : $ptrnNumber")
+                if (response.ResponseCode == 0) {
+                    pollingAttempts = 0
+                    while (pollingAttempts < maxPollingAttempts) {
+                        paymentViewModel.getTransactionStatus(
+                            GetCloudBasedTxnStatus(
+                                MerchantID = Constants.MERCHANT_ID,
+                                SecurityToken = Constants.SECURITY_TOKEN,
+                                ClientID = Constants.CLIENT_ID,
+                                UserID = Constants.USER_ID,
+                                StoreID = Constants.STORE_ID,
+                                PlutusTransactionReferenceID = ptrnNumber
+                            )
                         )
-                    )
-                    delay(pollingDelayMillis)
-                    pollingAttempts++
-                }
-                if (paymentViewModel.transactionStatus.value?.ResponseCode == 1001 && pollingAttempts >= maxPollingAttempts) {
-                    toaster.show(Toast(message = "Timed out.", type = ToastType.Warning, duration = 2000.milliseconds))
+                        delay(pollingDelayMillis)
+                        pollingAttempts++
+                    }
+                    if (paymentViewModel.transactionStatus.value?.ResponseCode == 1001 && pollingAttempts >= maxPollingAttempts) {
+                        toaster.show(Toast(message = "Timed out.", type = ToastType.Warning, duration = 2000.milliseconds))
+                        onCancel()
+                    }
+                } else {
+                    toaster.show(Toast(message = "Payment failed", type = ToastType.Error, duration = 2000.milliseconds))
                     onCancel()
                 }
-            } else {
-                toaster.show(Toast(message = "Payment failed", type = ToastType.Error, duration = 2000.milliseconds))
-                onCancel()
+            }
+        }
+        // Getting payment status from Pine Lab machine
+        LaunchedEffect(paymentStatus) {
+            paymentStatus?.let { status ->
+                if (status.ResponseCode == 0) {
+                    currentAnimation = "Payment Successful Creating Order"
+                    createOrder = true
+                }
             }
         }
     }
-    // Getting payment status from Pine Lab machine
-    LaunchedEffect(paymentStatus) {
-        paymentStatus?.let { status ->
-            if (status.ResponseCode == 0) {
-                currentAnimation = "Payment Successful Creating Order"
-                createOrder = true
-            }
-//            else if (status.ResponseCode == 1 && status.ResponseMessage == "INVALID PLUTUS TXN REF ID") {
-//                onCancel()
-//            }
-        }
-    }
-//    LaunchedEffect(cancelPayment) {
-//        if (cancelPayment) {
-//            if (ptrnNumber != 0) {
-//                paymentViewModel.cancelPayment(
-//                    GetCloudBasedTxnStatus(
-//                        MerchantID = Constants.MERCHANT_ID,
-//                        SecurityToken = Constants.SECURITY_TOKEN,
-//                        ClientID = Constants.CLIENT_ID,
-//                        UserID = Constants.USER_ID,
-//                        StoreID = Constants.STORE_ID,
-//                        PlutusTransactionReferenceID = ptrnNumber
-//                    )
-//                )
-//            }
-//            cancelPayment = false
-//        }
-//    }
 }
 
 

@@ -30,9 +30,11 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 @SuppressLint("SuspiciousIndentation")
 @Composable
-fun CommonProgressIndicator(message: String = "Loading", buttonName: String = "Submit", onClick: (() -> Unit)? = null) {
+fun CommonProgressIndicator(message: String = "Loading", buttonName: String = "Submit", dotAnimation: Boolean = true, onClick: (() -> Unit)? = null) {
     var dot by remember { mutableStateOf("") }
-    LaunchedEffect(Unit) { while (true) { dot = if (dot.length < 3) "$dot." else "";delay(500) } }
+    if (dotAnimation){
+        LaunchedEffect(Unit) { while (true) { dot = if (dot.length < 3) "$dot." else "";delay(500) } }
+    }
     Box(modifier = Modifier
         .fillMaxSize()
         .background(Color.Black.copy(alpha = 0.7f)), contentAlignment = Alignment.Center) {
