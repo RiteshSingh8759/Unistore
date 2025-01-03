@@ -1,25 +1,16 @@
 package com.kloc.unistore.screens
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.Button
+//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.Text
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.*
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.dokar.sonner.ToastType
 import com.kloc.unistore.model.viewModel.MainViewModel
 import kotlinx.coroutines.delay
@@ -27,9 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,15 +31,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Button
+//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,15 +45,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -78,10 +57,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.LottieConstants
-import com.airbnb.lottie.compose.animateLottieCompositionAsState
-import com.airbnb.lottie.compose.rememberLottieComposition
 import com.dokar.sonner.Toast
 import com.dokar.sonner.Toaster
 import com.dokar.sonner.rememberToasterState
@@ -90,9 +65,6 @@ import com.kloc.unistore.firestoredb.viewmodel.EmployeeViewModel
 import com.kloc.unistore.mail.EmailSender
 import com.kloc.unistore.navigation.Screen
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.mail.MessagingException
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -160,9 +132,10 @@ fun SignInScreen(navController: NavController, employeeViewModel: EmployeeViewMo
         staffNotRegistered = userData.data == null
     }
 
-    // Countdown timer for OTP resend
-    LaunchedEffect(otpSent) {
-        if (otpSent) {
+
+    if (otpSent) {
+        // Countdown timer for OTP resend
+        LaunchedEffect(otpSent) {
             countdown = 30
             resendEnabled = false
             while (countdown > 0) {
@@ -170,6 +143,12 @@ fun SignInScreen(navController: NavController, employeeViewModel: EmployeeViewMo
                 countdown--
             }
             resendEnabled = true
+        }
+        // Go back to send otp box
+        LaunchedEffect(otpSent) {
+            delay(60000)
+            generatedOtp = ""
+            otpSent = !otpSent
         }
     }
 
@@ -278,7 +257,7 @@ fun SignInScreen(navController: NavController, employeeViewModel: EmployeeViewMo
                 LoadingButton(
                     text = "Send OTP",
                     isLoading = !otpSent && isSentOtpClicked,
-                    isEnabled = staff_id.isNotBlank() && !(staffNotRegistered && staff_id.isNotEmpty()), // AJ : Added Enable desaible functionality
+                    isEnabled = staff_id.isNotBlank() && !(staffNotRegistered && staff_id.isNotEmpty()),
                     onClick = {
                         isSentOtpClicked = true
                         if (staff_id.isNotEmpty()) {
@@ -346,7 +325,7 @@ fun SignInScreen(navController: NavController, employeeViewModel: EmployeeViewMo
                     )
                 } else {
                     Text(
-                        text = "Didn't receive the code?",
+                        text = "Didn't receive the code? Go Back",
                         modifier = Modifier.clickable {
                             userInputOtp = ""
                             otpSent = false
@@ -434,9 +413,16 @@ fun OtpInput(
         decorationBox = {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 repeat(otpCount) { index ->
-                    Box(modifier = Modifier.weight(1f).height(56.dp).focusRequester(focusRequesters[index]).border(3.dp, if (index == otpText.length) Color(
-                        0xFF0E0D0F
-                    ) else Color.Gray, RoundedCornerShape(8.dp)).padding(2.dp)) {
+                    Box(modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp)
+                        .focusRequester(focusRequesters[index])
+                        .border(
+                            3.dp, if (index == otpText.length) Color(
+                                0xFF0E0D0F
+                            ) else Color.Gray, RoundedCornerShape(8.dp)
+                        )
+                        .padding(2.dp)) {
                         Text(
                             text = when {
                                 index == otpText.length -> ""

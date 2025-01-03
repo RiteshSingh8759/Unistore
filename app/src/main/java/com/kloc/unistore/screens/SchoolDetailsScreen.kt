@@ -1,6 +1,5 @@
 package com.kloc.unistore.screens
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -13,23 +12,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ExposedDropdownMenuBox
 import androidx.compose.material.ExposedDropdownMenuDefaults
-import androidx.compose.material.Icon
-import androidx.compose.material.Switch
-import androidx.compose.material.SwitchDefaults
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -47,8 +37,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -64,7 +56,6 @@ import com.kloc.unistore.common.LoadingButton
 import com.kloc.unistore.firestoredb.module.DeviceModel
 import com.kloc.unistore.firestoredb.viewmodel.EmployeeViewModel
 import com.kloc.unistore.model.schoolViewModel.SchoolViewModel
-import com.kloc.unistore.model.viewModel.MainViewModel
 import com.kloc.unistore.navigation.Screen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -77,11 +68,12 @@ fun SchoolDetailsScreen(
     employeeViewModel: EmployeeViewModel,
     viewModel: SchoolViewModel = hiltViewModel()
 ) {
+    var focusManager = LocalFocusManager.current
     val toaster = rememberToasterState()
     Toaster(state = toaster, darkTheme = true, maxVisibleToasts = 1)
 
     var slugId by remember { mutableStateOf("") }
-    // AJ : Removed Toaster
+
     val schoolDetails by viewModel.schoolDetails.collectAsState(initial = null)
     var isLoading by remember { mutableStateOf(false) }
     var lastClickTime by remember { mutableLongStateOf(0L) }
@@ -114,7 +106,14 @@ fun SchoolDetailsScreen(
             value = slugId,
             onValueChange = { slugId = it },
             label = { Text("Enter School Code") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            maxLines = 1,
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Done // Set the IME action to "Done" to indicate completion
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = { focusManager.clearFocus() } // Clears the focus to dismiss the keyboard
+            )
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -159,7 +158,7 @@ fun SchoolDetailsScreen(
         LoadingButton(
             text = "Submit",
             isLoading = isLoading,
-            isEnabled = slugId.isNotBlank() && !selectedDevice?.device?.device_id.isNullOrEmpty(), // AJ : Added Enable desaible functionality
+            isEnabled = slugId.isNotBlank() && !selectedDevice?.device?.device_id.isNullOrEmpty(),
             onClick = {
                 val currentTime = System.currentTimeMillis()
                 if (currentTime - lastClickTime > 2000) {
@@ -241,7 +240,7 @@ fun Carousel(
             Image(
                 painter = painterResource(id = images[page]),
                 contentDescription = "Carousel Image ${page + 1}",
-                contentScale = ContentScale.Crop,
+                contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize()
             )
         }

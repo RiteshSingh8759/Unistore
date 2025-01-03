@@ -9,7 +9,7 @@ data class LineItem(
     val meta_data: List<Any>,
     val name: String,
     val parent_name: Any,
-    val price: Int,
+    val price: Double,
     val product_id: Int,
     val quantity: Int,
     val sku: String,

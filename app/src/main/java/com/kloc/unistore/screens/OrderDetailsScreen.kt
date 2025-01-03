@@ -1,85 +1,38 @@
 package com.kloc.unistore.screens
 
+import java.util.UUID
 import android.util.Log
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.delay
 import androidx.navigation.NavController
-import com.kloc.unistore.entity.cart.CartItem
-import com.kloc.unistore.entity.order.Attributes
-import com.kloc.unistore.entity.order.Billing
-import com.kloc.unistore.entity.order.Image
-import com.kloc.unistore.entity.order.LineItem
-import com.kloc.unistore.entity.order.MetaDataX
-import com.kloc.unistore.entity.order.Order
-import com.kloc.unistore.entity.order.OrderMetaData
-import com.kloc.unistore.entity.order.Element
-import com.kloc.unistore.entity.order.MetaDataSubElement
-import com.kloc.unistore.entity.order.Shipping
-import com.kloc.unistore.entity.order.StampData
-import com.kloc.unistore.entity.order.TMCardEpoData
-import com.kloc.unistore.entity.order.TaxLine
-import com.kloc.unistore.entity.order.Taxe
-import com.kloc.unistore.entity.order.TmcpPostFields
-import com.kloc.unistore.model.orderViewModel.OrderViewModel
-import com.kloc.unistore.model.productViewModel.ProductViewModel
-import com.kloc.unistore.model.viewModel.MainViewModel
-import androidx.compose.foundation.rememberScrollState
+import kotlin.time.Duration.Companion.milliseconds
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.dokar.sonner.*
+import androidx.compose.ui.*
+import androidx.compose.ui.unit.*
+import androidx.compose.runtime.*
+import androidx.compose.material3.*
+import androidx.compose.foundation.*
+import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import com.dokar.sonner.Toast
-import com.dokar.sonner.ToastType
-import com.dokar.sonner.Toaster
-import com.dokar.sonner.rememberToasterState
-import com.kloc.unistore.common.CommonDropdownMenu
-import com.kloc.unistore.common.CommonProgressIndicator
-import com.kloc.unistore.common.SuccessfulAnimation
+import androidx.compose.ui.text.style.TextOverflow
+import com.kloc.unistore.common.*
+import com.kloc.unistore.util.Constants
+import com.kloc.unistore.navigation.Screen
+import com.kloc.unistore.model.viewModel.MainViewModel
+import com.kloc.unistore.model.orderViewModel.OrderViewModel
+import com.kloc.unistore.model.paymentViewModel.*
+import com.kloc.unistore.entity.order.*
+import com.kloc.unistore.entity.cart.CartItem
 import com.kloc.unistore.entity.order.TmcpData
-import com.kloc.unistore.entity.pineLabs.billing.AdditionalInfo
-import com.kloc.unistore.entity.pineLabs.billing.UploadBilledTransaction
+import com.kloc.unistore.entity.pineLabs.billing.*
 import com.kloc.unistore.entity.pineLabs.status.GetCloudBasedTxnStatus
 import com.kloc.unistore.firestoredb.viewmodel.EmployeeViewModel
-import com.kloc.unistore.model.paymentViewModel.PaymentViewModel
-import com.kloc.unistore.navigation.Screen
-import com.kloc.unistore.util.Constants
-import kotlinx.coroutines.delay
-import java.util.UUID
-import kotlin.time.Duration.Companion.milliseconds
+import com.kloc.unistore.model.productViewModel.ProductViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderDetailsScreen(
     navController: NavController,
@@ -134,31 +87,13 @@ fun OrderDetailsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = "Total Items",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Text(
-                        text = "$totalQuantity",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(text = "Total Items", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "$totalQuantity", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "Total Amount",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "₹$totalAmount",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(text = "Total Amount", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                    Text(text = "₹$totalAmount", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
                 }
             }
 
@@ -178,24 +113,16 @@ fun OrderDetailsScreen(
             Button(
                 onClick = {
                     paymentInitiate = true
-                          },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text(
-                    "Confirm Your Order",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
+                Text("Confirm Your Order", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimary)
             }
         }
         if (paymentInitiate) {
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxSize().clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
                 if (totalAmount < 100) {
                     toaster.show(Toast(message = "Payment amount should be atleast 1 rupees", type = ToastType.Error, duration = 2000.milliseconds))
                 } else {
@@ -222,27 +149,15 @@ fun OrderDetailsScreen(
 }
 
 @Composable
-fun OrderSectionCard(
-    title: String,
-    content: @Composable () -> Unit
-) {
+fun OrderSectionCard(title: String, content: @Composable () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        )
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(modifier = Modifier
-            .padding(16.dp)
-            .fillMaxWidth()) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
+        Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+            Text(text = title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(bottom = 12.dp))
             content()
         }
     }
@@ -250,13 +165,7 @@ fun OrderSectionCard(
 
 @Composable
 fun ProductDetailItem(cartItem: CartItem) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Column {
             Text(
                 text = cartItem.product.name,
@@ -266,11 +175,13 @@ fun ProductDetailItem(cartItem: CartItem) {
                 color = Color.Black,
                 overflow = TextOverflow.Ellipsis
             )
-            Text(
-                text = "Size: ${cartItem.size}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
+            if (cartItem.size.trim().isNotEmpty()) {
+                Text(
+                    text = "Size: ${cartItem.size}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -293,7 +204,7 @@ fun PaymentProcessingIndicator(
     paymentViewModel: PaymentViewModel,
     productViewModel: ProductViewModel,
     orderViewModel: OrderViewModel,
-    totalAmount: Int,
+    totalAmount: Double,
     selectedPaymentType: Int,
     onComplete: () -> Unit,
     onCancel: () -> Unit,
@@ -340,9 +251,7 @@ fun PaymentProcessingIndicator(
                         currentAnimation = "Payment Successful Order Created"
                     }
                 }
-                else {
-                    toaster.show(Toast(message = "Order Creation Failed.", type = ToastType.Error, duration = 2000.milliseconds))
-                }
+                else { toaster.show(Toast(message = "Order Creation Failed.", type = ToastType.Error, duration = 2000.milliseconds)) }
             }
         }
     } else {
@@ -351,9 +260,7 @@ fun PaymentProcessingIndicator(
             if (remainingTime > 0) {
                 delay(1000L)
                 remainingTime -= 1
-            } else {
-                onCancel()
-            }
+            } else { onCancel() }
         }
         // Sending request to Pine Lab machine for payment
         LaunchedEffect(Unit) {
@@ -418,9 +325,6 @@ fun PaymentProcessingIndicator(
         }
     }
 }
-
-
-
 
 fun paymentMode(mode: Int): String {
     val paymentModes = mapOf(

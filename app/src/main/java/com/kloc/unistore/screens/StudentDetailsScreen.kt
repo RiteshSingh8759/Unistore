@@ -72,6 +72,11 @@ import com.kloc.unistore.common.LoadingButton
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.ui.draw.scale
+import com.dokar.sonner.Toast
+import com.dokar.sonner.ToastType
+import com.dokar.sonner.Toaster
+import com.dokar.sonner.rememberToasterState
+import kotlin.time.Duration.Companion.milliseconds
 
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -108,18 +113,9 @@ fun StudentDetailsScreen(
     var isPhoneNumberTouched by remember { mutableStateOf(false) }
     var isEmailAddressTouched by remember { mutableStateOf(false) }
     var isClassTouched by remember { mutableStateOf(false) }
-    var isBillingAddressLine1Touched by remember { mutableStateOf(false) }
-    var isBillingCityTouched by remember { mutableStateOf(false) }
-    var isBillingStateTouched by remember { mutableStateOf(false) }
-    var isBillingZipCodeTouched by remember { mutableStateOf(false) }
-    var isShippingAddressLine1Touched by remember { mutableStateOf(false) }
-    var isShippingCityTouched by remember { mutableStateOf(false) }
-    var isShippingStateTouched by remember { mutableStateOf(false) }
-    var isShippingZipCodeTouched by remember { mutableStateOf(false) }
-
     // Validation regex patterns
     val nameRegex = "^[A-Za-zÀ-ÿ\\s'-.]+$".toRegex()
-    val phoneNumberRegex = "^[1-9][0-9]{9}$".toRegex()
+    val phoneNumberRegex = "^[6-9][0-9]{9}$".toRegex()
     val emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$".toRegex()
     val zipCodeRegex = "^[0-9]{6}$".toRegex()
     val addressRegex = "^[A-Za-z0-9\\s,.'-]{5,}$".toRegex()
@@ -475,6 +471,8 @@ private fun AddressSection(
     zipCodeError : Boolean
 ) {
 
+    val toaster = rememberToasterState()
+    Toaster(state = toaster, darkTheme = true, maxVisibleToasts = 1)
     // fetching the school address
     val schoolAddress = employeeViewModel.address.value.data?.address
 
@@ -514,16 +512,25 @@ private fun AddressSection(
                             onCheckedChange = {
                                 mainViewModel.schoolAddress = it
                                 if (mainViewModel.schoolAddress) {
-                                    // Update the billing address details when the switch is enabled
-                                    onBillingAddressLine1Change(schoolAddress?.addressLine1.toString())
-                                    onBillingAddressLine2Change(schoolAddress?.addressLine2.toString())
-                                    onBillingCityChange(schoolAddress?.city.toString())
-                                    onBillingStateChange(schoolAddress?.state.toString())
-                                    onBillingZipCodeChange(schoolAddress?.zipcode.toString())
+                                    val addressLine1 = schoolAddress?.addressLine1
+                                    val addressLine2 = schoolAddress?.addressLine2
+                                    val city = schoolAddress?.city
+                                    val state = schoolAddress?.state
+                                    val zipcode = schoolAddress?.zipcode
 
-                                    // Update typeOfAddress in the ViewModel
-                                    mainViewModel.typeOfAddress = true
-                                } else {
+                                    if (addressLine1.isNullOrEmpty() || addressLine2.isNullOrEmpty() || city.isNullOrEmpty() || state.isNullOrEmpty() || zipcode.isNullOrEmpty()) {
+                                        mainViewModel.schoolAddress = false
+                                        mainViewModel.typeOfAddress = false
+                                        toaster.show(Toast(message = "School details not found. Please provide complete details.", type = ToastType.Error, duration = 2000.milliseconds))
+                                    } else {
+                                        onBillingAddressLine1Change(addressLine1)
+                                        onBillingAddressLine2Change(addressLine2)
+                                        onBillingCityChange(city)
+                                        onBillingStateChange(state)
+                                        onBillingZipCodeChange(zipcode)
+                                        mainViewModel.typeOfAddress = true
+                                    }
+                                }  else {
                                     // Optionally set it to false if the switch is disabled
                                     mainViewModel.typeOfAddress = false
                                 }

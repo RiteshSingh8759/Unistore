@@ -79,9 +79,9 @@ fun NavGraph(
                     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.Center) {
                         when (currentRoute) {
                             SchoolDetailsScreen.route -> { Image(painter = painterResource(id = R.drawable.logo), contentDescription = "Unistore Logo", modifier = Modifier.size(160.dp).padding(start = 5.dp, end = 8.dp)) }
-                            SchoolCategoryScreen.route -> { Text(text = "Select Grade", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
-                            ProductDetailsScreen.route -> { Text(text = "Select Gender", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
-                            ProductScreen.route -> { Text(text = "Add Products", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
+                            SchoolCategoryScreen.route -> { Text(text = "Grade", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
+                            ProductDetailsScreen.route -> { Text(text = "Gender", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
+                            ProductScreen.route -> { Text(text = "Products", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
                             CartScreen.route -> { Text(text = "Cart", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
                             StudentDetailsScreen.route -> { Text(text = "Student Details", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
                             OrderDetailsScreen.route -> { Text(text = "Order Summary", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
@@ -131,7 +131,7 @@ fun NavGraph(
                 SignInScreen(navController =navController,employeeViewModel=employeesViewModel , mainViewModel= mainViewModel)
             }
             composable(route = SchoolDetailsScreen.route) {
-                schoolViewModel.resetSchoolDetails() // AJ
+                schoolViewModel.resetSchoolDetails()
                 SchoolDetailsScreen(navController = navController,employeeViewModel=employeesViewModel)
             }
             composable(
@@ -140,7 +140,7 @@ fun NavGraph(
             ) { backStackEntry ->
                 val schoolId = backStackEntry.arguments?.getInt(SCHOOL_ID)
                 if (schoolId != null) {
-                   schoolCategoryViewModel.resetCategories() // AJ
+                   schoolCategoryViewModel.resetCategories()
                     SchoolCategoryScreen(navController = navController, schoolId = schoolId,mainViewModel=mainViewModel)
                 }
             }
@@ -160,7 +160,7 @@ fun NavGraph(
                 arguments = listOf(navArgument(PRODUCT_ID) { type = NavType.IntType })
             ) { backStackEntry ->
                 val productId = backStackEntry.arguments?.getInt(PRODUCT_ID) ?: 0
-                productViewModel.resetProductData()     // AJ
+                productViewModel.resetProductData()
                 ProductScreen(navController = navController, productId = productId,viewModel=productViewModel, mainViewModel = mainViewModel)
             }
             // Cart Screen

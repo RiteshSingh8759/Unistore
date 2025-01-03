@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.kloc.unistore.R
 import com.kloc.unistore.common.CommonProgressIndicator
 import com.kloc.unistore.entity.productCategory.Category
 import com.kloc.unistore.model.productCategoryViewModel.SchoolCategoryViewModel
@@ -92,8 +93,8 @@ fun CategoryItem(category: Category, onClick: () -> Unit) {
             contentAlignment = Alignment.BottomCenter
         ) {
             AsyncImage(
-                model = category.image.src,
-                contentDescription = category.image.alt,
+                model = category.image?.src ?: R.drawable.image,
+                contentDescription = category.image?.alt ?: "Default Image",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )

@@ -44,7 +44,7 @@ data class Product(
     val parent_id: Int,
     val permalink: String,
     val post_password: String,
-    val price: Int,
+    val price: Double,
     val price_html: String,
     val purchasable: Boolean,
     val purchase_note: String,
