@@ -1,5 +1,6 @@
 package com.kloc.unistore.screens
 
+import android.os.Build.VERSION_CODES.R
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +42,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -104,17 +106,24 @@ fun SchoolDetailsScreen(
         )
         OutlinedTextField(
             value = slugId,
-            onValueChange = { slugId = it },
+            onValueChange = { input ->
+                // Allow only digits by filtering out non-digit characters
+                if (input.matches(Regex("^\\d*\$"))) {
+                    slugId = input
+                }
+            },
             label = { Text("Enter School Code") },
             modifier = Modifier.fillMaxWidth(),
             maxLines = 1,
             keyboardOptions = KeyboardOptions.Default.copy(
-                imeAction = ImeAction.Done // Set the IME action to "Done" to indicate completion
+                imeAction = ImeAction.Done,
+                keyboardType = KeyboardType.Number // Show numeric keyboard
             ),
             keyboardActions = KeyboardActions(
-                onDone = { focusManager.clearFocus() } // Clears the focus to dismiss the keyboard
+                onDone = { focusManager.clearFocus() } // Clear focus to dismiss keyboard
             )
         )
+
 
         Spacer(modifier = Modifier.height(8.dp))
         // code for dropdown device id

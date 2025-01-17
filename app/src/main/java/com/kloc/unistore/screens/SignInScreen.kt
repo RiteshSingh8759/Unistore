@@ -34,6 +34,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,6 +51,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -60,11 +62,13 @@ import androidx.navigation.NavController
 import com.dokar.sonner.Toast
 import com.dokar.sonner.Toaster
 import com.dokar.sonner.rememberToasterState
+import com.google.common.io.Files.append
 import com.kloc.unistore.common.LoadingButton
 import com.kloc.unistore.firestoredb.viewmodel.EmployeeViewModel
 import com.kloc.unistore.mail.EmailSender
 import com.kloc.unistore.navigation.Screen
 import kotlinx.coroutines.Dispatchers
+import java.time.format.TextStyle
 import javax.mail.MessagingException
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -101,7 +105,7 @@ fun SignInScreen(navController: NavController, employeeViewModel: EmployeeViewMo
                     startIndex = 0,
                     endIndex = part.length - (charIndex + 1)
                 )
-                delay(30)
+                delay(60)
             }
             delay(500)
             partIndex = (partIndex + 1) % parts.size
@@ -116,7 +120,7 @@ fun SignInScreen(navController: NavController, employeeViewModel: EmployeeViewMo
     var staffNotRegistered by remember { mutableStateOf(false) }
     var isSentOtpClicked by remember { mutableStateOf(false) }
     var resendEnabled by remember { mutableStateOf(false) }
-    var countdown by remember { mutableIntStateOf(30) }
+    var countdown by remember { mutableIntStateOf(60) }
     var isVerifyingOtp by remember { mutableStateOf(false) }
     var otpError by remember { mutableStateOf(false) }
 
@@ -136,7 +140,7 @@ fun SignInScreen(navController: NavController, employeeViewModel: EmployeeViewMo
     if (otpSent) {
         // Countdown timer for OTP resend
         LaunchedEffect(otpSent) {
-            countdown = 30
+            countdown = 60
             resendEnabled = false
             while (countdown > 0) {
                 delay(1000)
@@ -230,7 +234,9 @@ fun SignInScreen(navController: NavController, employeeViewModel: EmployeeViewMo
                 label = { Text("Enter Staff Id") },
                 isError = staffNotRegistered || staffError.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !otpSent
+                enabled = !otpSent,
+                maxLines = 1,
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
             )
 
             if (staffNotRegistered && staff_id.isNotEmpty()) {
@@ -266,8 +272,25 @@ fun SignInScreen(navController: NavController, employeeViewModel: EmployeeViewMo
                                     val otp = (100000..999999).random().toString()
                                     EmailSender.sendEmail(
                                         toEmail = userData.data?.employee?.email,
-                                        subject = "Your OTP Code",
-                                        body = "Your OTP is: $otp",
+                                        subject = " Your Login Credentials and OTP for Secure Access of Unipro App",
+                                        body = """
+                                                    Dear ${userData.data?.employee?.name}-${userData.data?.employee?.id},
+                                                    
+                                                    We are pleased to inform you that for your account of Unipro App, below are your login credentials with One-Time Password (OTP).
+                                                    
+                                                    One-Time Password (OTP): ${otp}
+                                                    
+                                                    For security reasons, please note the following:
+                                                    - The OTP is valid for 60 seconds.
+                                                    - Ensure you do not share your login credentials or OTP with anyone.
+                                                    
+                                                    If you encounter any issues during the login process or need assistance, please feel free to contact the Unipro support team.
+                                                    
+                                                    Thank you,
+                                                    
+                                                    Regards,
+                                                    Unipro Team
+                                                """.trimIndent(),
                                         fromEmail = "ritesh.singh@kloctechnologies.com",
                                         password = "xjwfxiseksaouxue"
                                     )

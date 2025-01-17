@@ -59,7 +59,6 @@ fun CartScreen(navController: NavHostController, mainViewModel: MainViewModel) {
 fun CartProductCard(cartProduct: CartItem, mainViewModel: MainViewModel) {
     var quantity by remember { mutableStateOf(cartProduct.quantity) }
     var min_Quantity by remember { mutableStateOf(cartProduct.min_Quantity) }
-
     Card(modifier = Modifier.fillMaxWidth().padding(4.dp), shape = RoundedCornerShape(8.dp), elevation = CardDefaults.cardElevation(defaultElevation = 4.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
         Column(modifier = Modifier.padding(8.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -73,13 +72,39 @@ fun CartProductCard(cartProduct: CartItem, mainViewModel: MainViewModel) {
                     Text(text = cartProduct.product.name, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 2, color = Color.Black)
                     if (cartProduct.size.trim().isNotEmpty()) {
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text(text = "Size: " + cartProduct.size, fontSize = 15.sp, color = Color.DarkGray)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Size: ",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                            LazyColumn(modifier = Modifier
+                                .heightIn(max = 100.dp)
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.White)) {
+                                item {
+                                    Text(
+                                        text = cartProduct.size,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
+                        }
+//                        Text(text = "Size: " + cartProduct.size, fontSize = 15.sp, color = Color.DarkGray)
+                    }
+                    if(cartProduct.color.trim().isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Color: " + cartProduct.color,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
                     }
                 }
             }
-
             Spacer(modifier = Modifier.height(4.dp))
-
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = if (cartProduct.product.stock_status == "instock") "In Stock" else "Out of Stock",
@@ -89,9 +114,7 @@ fun CartProductCard(cartProduct: CartItem, mainViewModel: MainViewModel) {
                 )
                 Text(text = "MRP ₹${cartProduct.product.price}", color = Color.DarkGray, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
             }
-
             Spacer(modifier = Modifier.height(4.dp))
-
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     TextButton(
@@ -105,9 +128,7 @@ fun CartProductCard(cartProduct: CartItem, mainViewModel: MainViewModel) {
                     ) {
                         Text("-", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }
-
                     Text(text = quantity.toString(), fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 4.dp))
-
                     TextButton(
                         onClick = {
                             quantity++
@@ -118,7 +139,6 @@ fun CartProductCard(cartProduct: CartItem, mainViewModel: MainViewModel) {
                         Text("+", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }
                 }
-
                 Button(onClick = { mainViewModel.cartViewModel.removeFromCart(cartProduct) }, modifier = Modifier.height(32.dp), colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary)) {
                     Text("Remove", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
@@ -126,3 +146,5 @@ fun CartProductCard(cartProduct: CartItem, mainViewModel: MainViewModel) {
         }
     }
 }
+
+

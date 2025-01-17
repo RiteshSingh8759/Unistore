@@ -16,6 +16,10 @@ import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Payment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -52,15 +56,10 @@ fun OrderDetailsScreen(
     val totalQuantity = cartItems.sumOf { it.quantity }
     var selectedPaymentType by remember { mutableStateOf(0) }
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(MaterialTheme.colorScheme.background)) {
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)) {
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
             OrderSectionCard(title = "Products") {
-                LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
+                LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
                     items(cartItems) { cartItem ->
                         ProductDetailItem(cartItem)
                         HorizontalDivider(
@@ -74,46 +73,64 @@ fun OrderDetailsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
             OrderSectionCard(title = "Shipping Address") {
-                Text(
-                    text = studentDetails?.billingAddressLine1 ?: "No billing address provided",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                val fullAddress = buildString {
+                    appendLine("Line 1: ${studentDetails?.billingAddressLine1 ?: "Not provided"}")
+                    studentDetails?.billingAddressLine2?.takeIf { it.isNotBlank() }?.let {
+                        appendLine("Line 2: $it")
+                    }
+                    appendLine("City: ${studentDetails?.billingCity ?: "Not provided"}")
+                    appendLine("State: ${studentDetails?.billingState ?: "Not provided"}")
+                    appendLine("Zip Code: ${studentDetails?.billingZipCode ?: "Not provided"}")
+                }
+                LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                    item {
+                         Text(
+                            text = fullAddress.ifEmpty { "No billing address provided" },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                         )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
             OrderSectionCard(title = "Order Summary") {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(text = "Total Items", style = MaterialTheme.typography.bodyMedium)
-                    Text(text = "$totalQuantity", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(text = "Total Amount", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                    Text(text = "₹$totalAmount", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
+                LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                    item {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(text = "Total Items", style = MaterialTheme.typography.bodyMedium)
+                            Text(text = "$totalQuantity", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    item {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(text = "Total Amount", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                            Text(text = "₹$totalAmount", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
             OrderSectionCard(title = "Payment Details") {
-                CommonDropdownMenu(
-                    label = "Payment Type",
-                    items = (0..46).filter { paymentMode(it) != "Unknown" }.map { paymentMode(it) },
-                    selectedItem = paymentMode(selectedPaymentType),
-                    onItemSelected = { selectedOption ->
-                        selectedPaymentType = (0..46).first { paymentMode(it) == selectedOption }
+                LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                    item {
+                        CommonDropdownMenu(
+                            label = "Payment Type",
+                            items = (0..46).filter { paymentMode(it) != "Unknown" }.map { paymentMode(it) },
+                            selectedItem = paymentMode(selectedPaymentType),
+                            onItemSelected = { selectedOption ->
+                                selectedPaymentType = (0..46).first { paymentMode(it) == selectedOption }
+                            },
+                            leadingIcon = { Icon(Icons.Rounded.Payment, null) }
+                        )
                     }
-                )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
             Button(
-                onClick = {
-                    paymentInitiate = true
-                },
+                onClick = { paymentInitiate = true },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -166,7 +183,7 @@ fun OrderSectionCard(title: String, content: @Composable () -> Unit) {
 @Composable
 fun ProductDetailItem(cartItem: CartItem) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = cartItem.product.name,
                 style = MaterialTheme.typography.bodyMedium,
@@ -176,14 +193,36 @@ fun ProductDetailItem(cartItem: CartItem) {
                 overflow = TextOverflow.Ellipsis
             )
             if (cartItem.size.trim().isNotEmpty()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Size: ",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                    LazyColumn(modifier = Modifier
+                        .heightIn(max = 100.dp)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.White)) {
+                        item {
+                            Text(
+                                text = cartItem.size,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                }
+            }
+            if (cartItem.color.trim().isNotEmpty()) {
                 Text(
-                    text = "Size: ${cartItem.size}",
+                    text = "Color: ${cartItem.color}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
             }
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End, modifier = Modifier.wrapContentWidth()) {
             Text(
                 text = "x${cartItem.quantity}",
                 style = MaterialTheme.typography.bodyMedium,
@@ -233,8 +272,7 @@ fun PaymentProcessingIndicator(
     when (currentAnimation) {
         "Payment Processing" -> CommonProgressIndicator(message = "Processing Payment\nRemaining Time: ${String.format("%02d:%02d", remainingTime / 60, remainingTime % 60)}", buttonName = "Cancel Payment", dotAnimation = false) { onCancel() }
         "Payment Successful Creating Order" -> CommonProgressIndicator("Payment Successful!\nCreating Order")
-        "Payment Successful Order Created" -> SuccessfulAnimation("Payment Successful!\nOrder Id: $orderId") {
-            toaster.show(Toast(message = "Order Created!", type = ToastType.Success, duration = 2000.milliseconds))
+        "Payment Successful Order Created" -> SuccessfulAnimation("Order Created!\nOrder Id: $orderId") {
             onComplete()
             navController.popBackStack(Screen.SchoolCategoryScreen.route, inclusive = false)
         }
