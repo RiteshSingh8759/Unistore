@@ -12,4 +12,5 @@ interface EmployeeRepository
     fun getUserById(id:String) : Flow<ResultState<EmployeeModel>>
     fun getAllDevice():Flow<ResultState<List<DeviceModel>>>
     fun getAddressById(school_id:String) : Flow<ResultState<AddressModel>>
+    fun getDeviceDetailsById(device_id:String) : Flow<ResultState<DeviceModel>>
 }

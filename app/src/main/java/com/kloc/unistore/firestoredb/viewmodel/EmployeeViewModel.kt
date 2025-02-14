@@ -31,6 +31,9 @@ class EmployeeViewModel@Inject constructor(
     private val _deviceList:MutableState<FirestoreDeviceState> = mutableStateOf(FirestoreDeviceState())
     val deviceList: State<FirestoreDeviceState> = _deviceList
 
+    private val _deviceDetails:MutableState<FirestoreSingleDeviceState> = mutableStateOf(FirestoreSingleDeviceState())
+    val deviceDetails: State<FirestoreSingleDeviceState> = _deviceDetails
+
     private val _schoolAddress:MutableState<FirestoreAddressState> = mutableStateOf(FirestoreAddressState())
     val address: State<FirestoreAddressState> =_schoolAddress
 
@@ -83,6 +86,27 @@ class EmployeeViewModel@Inject constructor(
             }
         }
     }
+    fun getDeviceById(device_id: String) = viewModelScope.launch {
+        employeeRepository.getDeviceDetailsById(device_id).collect {
+            when (it) {
+                is ResultState.Success -> {
+                    _deviceDetails.value = FirestoreSingleDeviceState(
+                        data = it.data
+                    )
+                }
+                is ResultState.Failure -> {
+                    _deviceDetails.value = FirestoreSingleDeviceState(
+                        error = it.toString()
+                    )
+                }
+                ResultState.Loading -> {
+                    _deviceDetails.value = FirestoreSingleDeviceState(
+                        isLoading = true
+                    )
+                }
+            }
+        }
+    }
     fun getAddressBySchoolId(school_id: String)= viewModelScope.launch {
         employeeRepository.getAddressById(school_id).collect {
             when (it) {
@@ -118,6 +142,12 @@ data class singleState(
 )
 data class FirestoreDeviceState(
     val data:List<DeviceModel> = emptyList(),
+    val error:String = "",
+    val isLoading:Boolean = false
+)
+
+data class FirestoreSingleDeviceState(
+    val data:DeviceModel? = null,
     val error:String = "",
     val isLoading:Boolean = false
 )

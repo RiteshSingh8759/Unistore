@@ -1,6 +1,7 @@
 package com.kloc.unistore.repository.product
 
 import com.kloc.unistore.entity.product.Product
+import com.kloc.unistore.entity.productVariation.ProductVariationItem
 import com.kloc.unistore.service.UnistoreApiService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -20,6 +21,14 @@ class ProductRepository @Inject constructor() {
     }
     suspend fun fetchProductsByIds(includeIds: String): Response<List<Product>> {
         return apiService.getProductsByIds(include = includeIds)
+    }
+    suspend fun fetchProductVariations(productId: Int, search: String = ""): List<ProductVariationItem>? {
+        val response = if (search.isBlank()){
+            apiService.getAllProductVariations(productId)
+        } else {
+            apiService.getProductVariationsWithSearch(productId, search)
+        }
+        return if (response.isSuccessful) response.body() else null
     }
 
 }

@@ -15,10 +15,5 @@ object Constants {
     const val ORDER_DETAILS_SCREEN = "order_details_screen"
     const val STUDENT_DETAILS_SCREEN = "student_details_screen"
 
-    const val MERCHANT_ID = "29610"
-    const val SECURITY_TOKEN = "a4c9741b-2889-47b8-be2f-ba42081a246e"
-    const val CLIENT_ID = "1012541"
-    const val USER_ID = "RAVI"
-    const val STORE_ID = "1221258"
-    const val SEQUENCE_NUMBER = "1492697241"
+    const val SEQUENCE_NUMBER = "1"
 }

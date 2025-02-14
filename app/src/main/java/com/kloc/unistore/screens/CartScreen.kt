@@ -102,6 +102,14 @@ fun CartProductCard(cartProduct: CartItem, mainViewModel: MainViewModel) {
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                     }
+                    if(cartProduct.grade.trim().isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Grade: " + cartProduct.grade,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))
@@ -112,7 +120,7 @@ fun CartProductCard(cartProduct: CartItem, mainViewModel: MainViewModel) {
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )
-                Text(text = "MRP ₹${cartProduct.product.price}", color = Color.DarkGray, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+//                Text(text = "MRP ₹${cartProduct.product.price}", color = Color.DarkGray, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
             }
             Spacer(modifier = Modifier.height(4.dp))
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {

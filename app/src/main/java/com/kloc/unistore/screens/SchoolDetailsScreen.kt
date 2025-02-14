@@ -1,6 +1,6 @@
 package com.kloc.unistore.screens
 
-import android.os.Build.VERSION_CODES.R
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -177,6 +177,7 @@ fun SchoolDetailsScreen(
                             val deviceId = device.device?.device_id
                             if (deviceId != null) {
                                 userInput= employeeViewModel.updateUserInput(deviceId).toString()
+                                employeeViewModel.getDeviceById(deviceId)
                             } else {
                                 toaster.show(Toast(message = "Please select device id", type = ToastType.Warning, duration = 2000.milliseconds))
                             }

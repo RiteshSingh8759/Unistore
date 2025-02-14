@@ -5,7 +5,7 @@ data class BundledItem(
     val bundled_item_id: Int,
     val cart_price_visibility: String,
     val cart_visibility: String,
-    val default_variation_attributes: List<Any>,
+    val default_variation_attributes: List<DefaultVariationattribute>,
     val description: String,
     val discount: String,
     val hide_thumbnail: Boolean,

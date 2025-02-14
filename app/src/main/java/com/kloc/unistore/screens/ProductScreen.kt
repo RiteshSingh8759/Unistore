@@ -86,6 +86,7 @@ fun ProductScreen(
     val productDetails by viewModel.productDetails.collectAsState()
     val productItemMap = remember { mutableStateMapOf<Int, MutableList<Pair<Int, Int>>>() }
     var isLoading by remember{mutableStateOf(false)}
+
     LaunchedEffect(productId) {
         isLoading = true
         viewModel.fetchProductDetailsById(productId)
@@ -143,12 +144,11 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel, productItemMap: 
 
     val toaster = rememberToasterState()
     Toaster(state = toaster, darkTheme = true, maxVisibleToasts = 1)
-
     var showBottomSheet by remember { mutableStateOf(false) }
     var customSizeSelectedOption by remember { mutableStateOf("") }
     var isCustomSizeChecked by remember { mutableStateOf(false) }
-
-
+    var selectedGrade by remember { mutableStateOf(product.attributes.find { it.name == "Class" }?.options?.firstOrNull()) }
+    var isGradeDropdownExpanded by remember { mutableStateOf(false) }
     val initialItemPair = productItemMap[product.id]?.firstOrNull() ?: (0 to 0)
     var quantity by remember { mutableStateOf(initialItemPair.second) }
     var selectedSize by remember { mutableStateOf(product.attributes.find { it.name == "Size" }?.options?.firstOrNull()) }
@@ -192,27 +192,48 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel, productItemMap: 
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold
                     )
-                    Text(
-                        text = "MRP ₹${product.price}",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Medium
-                    )
+//                    Text(
+//                        text = "MRP ₹${product.price}",
+//                        fontSize = 14.sp,
+//                        color = MaterialTheme.colorScheme.onSurface,
+//                        fontWeight = FontWeight.Medium
+//                    )
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))
             if (product.attributes.any { it.options.isNotEmpty() }) {
 
-                val availableColors = product.attributes.find { it.name == "Color" }?.options.orEmpty()
-                if (availableColors.isNotEmpty()) {
-                    AttributeDropdown(
-                        label = "Color",
-                        options = availableColors,
-                        selectedOption = selectedColor,
-                        onOptionSelected = { selectedColor = it },
-                        isExpanded = isColorDropdownExpanded,
-                        onExpandChanged = { isColorDropdownExpanded = it }
-                    )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    val availableColors = product.attributes.find { it.name == "Color" }?.options.orEmpty()
+                    if (availableColors.isNotEmpty()) {
+                        AttributeDropdown(
+                            label = "Color",
+                            options = availableColors,
+                            selectedOption = selectedColor,
+                            onOptionSelected = { selectedColor = it },
+                            isExpanded = isColorDropdownExpanded,
+                            onExpandChanged = { isColorDropdownExpanded = it }
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                    }
+                    val availableGrades = product.attributes.find { it.name == "Class" }?.options.orEmpty()
+                    if (availableGrades.isNotEmpty()) {
+                        AttributeDropdown(
+                            label = "Grade",
+                            options = availableGrades,
+                            selectedOption = selectedGrade,
+                            onOptionSelected = { selectedGrade = it },
+                            isExpanded = isGradeDropdownExpanded,
+                            onExpandChanged = { isGradeDropdownExpanded = it }
+                        )
+                    }
+
                 }
                 Row(
                     modifier = Modifier
@@ -394,6 +415,7 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel, productItemMap: 
                             quantity = quantity,
                             min_Quantity = initialItemPair.second,
                             selectedSize = sizeToAdd,
+                            selectedGrade = selectedGrade ?: "",
                             selectedColor = selectedColor ?: "",
                             sizeType = sizeType,
                             variationId = variationId,

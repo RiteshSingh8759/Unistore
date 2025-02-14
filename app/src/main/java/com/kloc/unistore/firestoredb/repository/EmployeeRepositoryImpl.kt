@@ -58,6 +58,10 @@ class EmployeeRepositoryImpl @Inject constructor(
                     DeviceModel(
                         device = DeviceModel.FirestoreDevice(
                             device_id = data["device_id"] as String?,
+                            merchant_id = data["merchant_id"] as String?,
+                            security_token = data["security_token"] as String?,
+                            store_id = data["store_id"] as String?,
+                            user_id = data["user_id"] as String?
                         ),
                         key = data.id
                     )
@@ -66,6 +70,40 @@ class EmployeeRepositoryImpl @Inject constructor(
             }.addOnFailureListener {
                 trySend(ResultState.Failure(it))
             }
+        awaitClose {
+            close()
+        }
+    }
+    override fun getDeviceDetailsById(device_id: String): Flow<ResultState<DeviceModel>> = callbackFlow {
+        trySend(ResultState.Loading)
+
+        db.collection("device")
+            .whereEqualTo("device_id", device_id)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                // If no documents are found, return an empty result.
+                val device = querySnapshot.map { data ->
+                    DeviceModel(
+                        device = DeviceModel.FirestoreDevice(
+                            device_id = data["device_id"] as String?,
+                            merchant_id = data["merchant_id"] as String?,
+                            security_token = data["security_token"] as String?,
+                            store_id = data["store_id"] as String?,
+                            user_id = data["user_id"] as String?
+                        ),
+                        key = data.id
+                    )
+                }
+
+                if (device.isNotEmpty()) {
+                    trySend(ResultState.Success(device.first())) // Send first user if exists
+                } else {
+                    trySend(ResultState.Failure(Exception("No device found with this ${device_id}"))) // Handle empty list case
+                }
+            }.addOnFailureListener {
+                trySend(ResultState.Failure(it)) // Handle failure
+            }
+
         awaitClose {
             close()
         }
@@ -107,6 +145,8 @@ class EmployeeRepositoryImpl @Inject constructor(
             close()
         }
     }
+
+
 
 
 }

@@ -1,9 +1,11 @@
 package com.kloc.unistore.model.productViewModel
 
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kloc.unistore.entity.product.Product
+import com.kloc.unistore.entity.productVariation.ProductVariationItem
 import com.kloc.unistore.repository.product.ProductRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -75,6 +77,53 @@ class ProductViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+    }
+    //    private val _productVariations = MutableStateFlow<List<ProductVariationItem>>(emptyList())
+//    val productVariations: StateFlow<List<ProductVariationItem>> = _productVariations
+//
+//    fun fetchProductVariations(productId: Int, key: Int, grade: String?, color: String?, size: String?) {
+//        val searchQuery = listOfNotNull(grade, color, size).joinToString(", ")
+//        viewModelScope.launch(Dispatchers.IO) {
+//            val variations = repository.fetchProductVariations(productId, searchQuery)?.first()
+//            withContext(Dispatchers.Main) {
+//                _productVariations.value = _productVariations.value.toMutableMap().apply {
+//                    if (variations != null) {
+//                        put(key, variations)
+//                    }
+//                }
+//            }
+//        }
+//        Log.d("debug", "fuck: ${productVariations.toString()}")
+//    }
+    private val _productVariations = MutableStateFlow<Map<Int, ProductVariationItem>>(emptyMap())
+    val productVariations: StateFlow<Map<Int, ProductVariationItem>> = _productVariations
+    fun fetchProductVariations(productId: Int, key: Int, grade: String?, color: String?, size: String?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val nonNullValues = listOfNotNull(grade, color, size).filter { it.isNotBlank() }
+
+            val variations = when (nonNullValues.size) {
+                1 -> {
+                    val filter = nonNullValues.first().replace(Regex("[,\\s]+"), "").trim()
+                    repository.fetchProductVariations(productId)?.find {
+                        val variationName = it.name?.replace(Regex("[,\\s]+"), "")?.trim() ?: ""
+                        variationName == filter || variationName.toIntOrNull() == filter.toIntOrNull()
+                    }
+                }
+                in 2..3 -> {
+                    val searchQuery = nonNullValues.joinToString(", ")
+                    repository.fetchProductVariations(productId, searchQuery)?.firstOrNull() // Avoid crash
+                }
+                else -> null
+            }
+
+            withContext(Dispatchers.Main) {
+                _productVariations.value = _productVariations.value.toMutableMap().apply {
+                    if (variations != null) {
+                        put(key, variations)
+                    }
+                }
             }
         }
     }

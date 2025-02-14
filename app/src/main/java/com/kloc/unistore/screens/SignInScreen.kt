@@ -2,7 +2,6 @@ package com.kloc.unistore.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.Text
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Phone
@@ -31,10 +30,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,7 +46,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -62,17 +58,13 @@ import androidx.navigation.NavController
 import com.dokar.sonner.Toast
 import com.dokar.sonner.Toaster
 import com.dokar.sonner.rememberToasterState
-import com.google.common.io.Files.append
 import com.kloc.unistore.common.LoadingButton
 import com.kloc.unistore.firestoredb.viewmodel.EmployeeViewModel
 import com.kloc.unistore.mail.EmailSender
 import com.kloc.unistore.navigation.Screen
 import kotlinx.coroutines.Dispatchers
-import java.time.format.TextStyle
 import javax.mail.MessagingException
 import kotlin.time.Duration.Companion.milliseconds
-
-
 
 @Composable
 fun SignInScreen(navController: NavController, employeeViewModel: EmployeeViewModel, mainViewModel: MainViewModel) {
@@ -150,7 +142,7 @@ fun SignInScreen(navController: NavController, employeeViewModel: EmployeeViewMo
         }
         // Go back to send otp box
         LaunchedEffect(otpSent) {
-            delay(60000)
+            delay(120000)
             generatedOtp = ""
             otpSent = !otpSent
         }
@@ -452,7 +444,7 @@ fun OtpInput(
                                 index > otpText.length -> ""
                                 else -> otpText[index].toString()
                             },
-                            style = TextStyle(
+                            style = androidx.compose.ui.text.TextStyle(
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center

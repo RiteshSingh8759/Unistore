@@ -52,15 +52,40 @@ fun OrderDetailsScreen(
     var paymentInitiate by remember { mutableStateOf(false) }
     val cartItems by mainViewModel.cartViewModel.cartItems.collectAsState()
     val studentDetails by mainViewModel.studentViewModel.studentDetails.collectAsState()
-    val totalAmount = cartItems.sumOf { it.product.price * it.quantity }
+    // Compute total amount safely
+    var totalAmount by remember { mutableStateOf(0.0) }
+    var priceCollections by remember { mutableStateOf(mutableMapOf<Int, Pair<String, Int>>()) }
+    LaunchedEffect(priceCollections) {
+        totalAmount = priceCollections.values.sumOf { (price, quantity) ->
+            price.toDoubleOrNull()?.times(quantity) ?: 0.0
+        }
+    }
+
     val totalQuantity = cartItems.sumOf { it.quantity }
     var selectedPaymentType by remember { mutableStateOf(0) }
-
-    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
+    val productVariationMap by productViewModel.productVariations.collectAsState()
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(MaterialTheme.colorScheme.background)) {
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)) {
             OrderSectionCard(title = "Products") {
                 LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
-                    items(cartItems) { cartItem ->
+                    items(cartItems.size) { index ->
+                        val cartItem = cartItems[index]
+                        productViewModel.fetchProductVariations(cartItem.product.id, index, cartItem.grade, cartItem.color, cartItem.size)
+                        if(productVariationMap.isNotEmpty()){
+                            val productVariationList = productVariationMap[index]
+                            if (productVariationList != null) {
+                                cartItem.price = productVariationList.regular_price.toString()
+                                //  Update priceCollections properly
+                                priceCollections = priceCollections.toMutableMap().apply {
+                                    this[cartItem.itemId] = Pair(cartItem.price, cartItem.quantity)
+                                }
+                            }
+                        }
                         ProductDetailItem(cartItem)
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = 4.dp),
@@ -131,7 +156,9 @@ fun OrderDetailsScreen(
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = { paymentInitiate = true },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
@@ -139,7 +166,9 @@ fun OrderDetailsScreen(
             }
         }
         if (paymentInitiate) {
-            Box(modifier = Modifier.fillMaxSize().clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
                 if (totalAmount < 100) {
                     toaster.show(Toast(message = "Payment amount should be atleast 1 rupees", type = ToastType.Error, duration = 2000.milliseconds))
                 } else {
@@ -173,7 +202,9 @@ fun OrderSectionCard(title: String, content: @Composable () -> Unit) {
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+        Column(modifier = Modifier
+            .padding(16.dp)
+            .fillMaxWidth()) {
             Text(text = title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(bottom = 12.dp))
             content()
         }
@@ -182,7 +213,9 @@ fun OrderSectionCard(title: String, content: @Composable () -> Unit) {
 
 @Composable
 fun ProductDetailItem(cartItem: CartItem) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+    Row(modifier = Modifier
+        .fillMaxWidth()
+        .padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = cartItem.product.name,
@@ -228,11 +261,20 @@ fun ProductDetailItem(cartItem: CartItem) {
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(end = 8.dp)
             )
-            Text(
-                text = "₹${cartItem.product.price * cartItem.quantity}",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold
-            )
+            if (cartItem.price.isNotBlank()){
+                Text(
+                    text = "₹${cartItem.price.toDouble() * cartItem.quantity}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            else if (cartItem.size.isEmpty() && cartItem.grade.isEmpty() && cartItem.color.isEmpty()) {
+                Text(
+                    text = "₹${cartItem.product.regular_price.toDouble() * cartItem.quantity}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -268,6 +310,7 @@ fun PaymentProcessingIndicator(
     }) }
     var remainingTime by remember { mutableStateOf(waitingTime * 60) }
     var currentAnimation by remember { mutableStateOf("Payment Processing") }
+    val deviceDetails =employeeViewModel.deviceDetails.value.data?.device
     // Showing Animations
     when (currentAnimation) {
         "Payment Processing" -> CommonProgressIndicator(message = "Processing Payment\nRemaining Time: ${String.format("%02d:%02d", remainingTime / 60, remainingTime % 60)}", buttonName = "Cancel Payment", dotAnimation = false) { onCancel() }
@@ -307,11 +350,11 @@ fun PaymentProcessingIndicator(
                 SequenceNumber = Constants.SEQUENCE_NUMBER,
                 AllowedPaymentMode = selectedPaymentType.toString(),
                 Amount = totalAmount * 100,
-                UserID = Constants.USER_ID,
-                MerchantID = Constants.MERCHANT_ID,
-                SecurityToken = Constants.SECURITY_TOKEN,
-                StoreID = Constants.STORE_ID,
-                ClientID = Constants.CLIENT_ID,
+                UserID = deviceDetails?.user_id,
+                MerchantID = deviceDetails?.merchant_id,
+                SecurityToken =deviceDetails?.security_token,
+                StoreID = deviceDetails?.store_id,
+                ClientID = deviceDetails?.device_id,
                 AutoCancelDurationInMinutes = waitingTime,
                 TotalInvoiceAmount = totalAmount,
                 AdditionalInfo = listOf(
@@ -325,17 +368,16 @@ fun PaymentProcessingIndicator(
         LaunchedEffect(paymentResponse) {
             paymentResponse?.let { response ->
                 ptrnNumber = response.PlutusTransactionReferenceID ?: 0
-                Log.d("debug1", "PTRM : $ptrnNumber")
                 if (response.ResponseCode == 0) {
                     pollingAttempts = 0
                     while (pollingAttempts < maxPollingAttempts) {
                         paymentViewModel.getTransactionStatus(
                             GetCloudBasedTxnStatus(
-                                MerchantID = Constants.MERCHANT_ID,
-                                SecurityToken = Constants.SECURITY_TOKEN,
-                                ClientID = Constants.CLIENT_ID,
-                                UserID = Constants.USER_ID,
-                                StoreID = Constants.STORE_ID,
+                                UserID = deviceDetails?.user_id,
+                                MerchantID = deviceDetails?.merchant_id,
+                                SecurityToken =deviceDetails?.security_token,
+                                StoreID = deviceDetails?.store_id,
+                                ClientID = deviceDetails?.device_id,
                                 PlutusTransactionReferenceID = ptrnNumber
                             )
                         )
@@ -355,9 +397,14 @@ fun PaymentProcessingIndicator(
         // Getting payment status from Pine Lab machine
         LaunchedEffect(paymentStatus) {
             paymentStatus?.let { status ->
-                if (status.ResponseCode == 0) {
-                    currentAnimation = "Payment Successful Creating Order"
-                    createOrder = true
+                when (status.ResponseMessage.toString()) {
+                    "TXN APPROVED" -> {
+                        currentAnimation = "Payment Successful Creating Order"
+                        createOrder = true
+                    }
+                    "PLEASE APPROVE OPEN TXN FIRST" -> {
+                        toaster.show(Toast(message = "Please complete all previous transaction first", type = ToastType.Warning, duration = 2000.milliseconds))
+                    }
                 }
             }
         }
