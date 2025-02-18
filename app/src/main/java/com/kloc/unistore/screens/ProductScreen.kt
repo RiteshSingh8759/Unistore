@@ -419,7 +419,8 @@ fun ProductCard(product: Product, mainViewModel: MainViewModel, productItemMap: 
                             selectedColor = selectedColor ?: "",
                             sizeType = sizeType,
                             variationId = variationId,
-                            itemId = itemId
+                            itemId = itemId,
+                            customSize=isCustomSizeChecked
                         )
                         when (response) {
                             "Product with selected size and color already exists.Quantity updated by $quantity" -> {

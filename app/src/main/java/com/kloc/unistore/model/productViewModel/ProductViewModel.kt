@@ -132,6 +132,7 @@ class ProductViewModel @Inject constructor(
 
     fun resetProductData()
     {
+        _productVariations.value= emptyMap()
         _products.value = emptyList()
         _productDetails.value = null
         _bundledProducts.value = emptyList()

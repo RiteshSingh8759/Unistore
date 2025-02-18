@@ -26,7 +26,7 @@ interface PineLabsApiService {
         @Body request: GetCloudBasedTxnStatus
     ): Response<PineLabResponse>
     companion object {
-        private const val BASE_URL = "https://www.plutuscloudserviceuat.in:8201/API/"
+        private const val BASE_URL = "https://www.plutuscloudservice.in:8201/API/"
         fun create(context: Context): PineLabsApiService {
             val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
                 @SuppressLint("TrustAllX509TrustManager")

@@ -25,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -77,9 +78,13 @@ fun NavGraph(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.Center) {
+                    Row(modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp), horizontalArrangement = Arrangement.Center) {
                         when (currentRoute) {
-                            SchoolDetailsScreen.route -> { Image(painter = painterResource(id = R.drawable.logo), contentDescription = "Unistore Logo", modifier = Modifier.size(160.dp).padding(start = 5.dp, end = 8.dp)) }
+                            SchoolDetailsScreen.route -> { Image(painter = painterResource(id = R.drawable.logo), contentDescription = "Unistore Logo", modifier = Modifier
+                                .size(160.dp)
+                                .padding(start = 5.dp, end = 8.dp)) }
                             SchoolCategoryScreen.route -> { Text(text = "Grade", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
                             ProductDetailsScreen.route -> { Text(text = "Gender", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
                             ProductScreen.route -> { Text(text = "Products", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center , fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) }
@@ -152,7 +157,9 @@ fun NavGraph(
                 SignInScreen(navController =navController,employeeViewModel=employeesViewModel , mainViewModel= mainViewModel)
             }
             composable(route = SchoolDetailsScreen.route) {
-                schoolViewModel.resetSchoolDetails()
+               LaunchedEffect(Unit) {
+                   schoolViewModel.resetSchoolDetails()
+               }
                 SchoolDetailsScreen(navController = navController,employeeViewModel=employeesViewModel)
             }
             composable(
@@ -161,7 +168,9 @@ fun NavGraph(
             ) { backStackEntry ->
                 val schoolId = backStackEntry.arguments?.getInt(SCHOOL_ID)
                 if (schoolId != null) {
-                   schoolCategoryViewModel.resetCategories()
+                    LaunchedEffect(Unit) {
+                        schoolCategoryViewModel.resetCategories()
+                    }
                     SchoolCategoryScreen(navController = navController, schoolId = schoolId,mainViewModel=mainViewModel)
                 }
             }
@@ -171,8 +180,10 @@ fun NavGraph(
             ) { backStackEntry ->
                 val categoryId = backStackEntry.arguments?.getInt(CATEGORY_ID)
                 if (categoryId != null) {
-                    mainViewModel.studentViewModel.clearStudentDetails()
-                    mainViewModel.cartViewModel.clearCart()
+                    LaunchedEffect(Unit) {
+                        mainViewModel.studentViewModel.clearStudentDetails()
+                        mainViewModel.cartViewModel.clearCart()
+                    }
                     ProductDetailScreen(navController = navController, categoryId = categoryId,viewModel=productViewModel)
                 }
             }
@@ -181,7 +192,9 @@ fun NavGraph(
                 arguments = listOf(navArgument(PRODUCT_ID) { type = NavType.IntType })
             ) { backStackEntry ->
                 val productId = backStackEntry.arguments?.getInt(PRODUCT_ID) ?: 0
-                productViewModel.resetProductData()
+                LaunchedEffect(Unit) {
+                    productViewModel.resetProductData()
+                }
                 ProductScreen(navController = navController, productId = productId,viewModel=productViewModel, mainViewModel = mainViewModel)
             }
             // Cart Screen

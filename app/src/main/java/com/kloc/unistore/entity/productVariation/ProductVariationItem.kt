@@ -36,7 +36,7 @@ data class ProductVariationItem(
 //    val sale_price: Any?,
 //    val shipping_class: String?,
 //    val shipping_class_id: Any?,
-//    val sku: String?,
+    val sku: String?,
 //    val status: String?,
 //    val stock_quantity: Any?,
 //    val stock_status: String?,

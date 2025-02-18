@@ -13,4 +13,6 @@ data class CartItem(
     var grade: String = "",
     var color: String = "",
     var price: String = "",
+    var sku: String = "",
+    var customSize:Boolean=false
 )

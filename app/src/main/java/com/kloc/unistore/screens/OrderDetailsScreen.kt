@@ -55,7 +55,39 @@ fun OrderDetailsScreen(
     // Compute total amount safely
     var totalAmount by remember { mutableStateOf(0.0) }
     var priceCollections by remember { mutableStateOf(mutableMapOf<Int, Pair<String, Int>>()) }
-    LaunchedEffect(priceCollections) {
+
+    // Fetch product variations for all cart items, regardless of LazyColumn visibility
+    LaunchedEffect(cartItems) {
+        cartItems.forEachIndexed { index, cartItem ->
+            productViewModel.fetchProductVariations(
+                cartItem.product.id,
+                index,
+                cartItem.grade,
+                cartItem.color,
+                cartItem.size
+            )
+        }
+    }
+
+    val productVariationMap by productViewModel.productVariations.collectAsState()
+
+    // Update price collections when product variations change
+    LaunchedEffect(productVariationMap) {
+        val updatedPriceCollections = priceCollections.toMutableMap()
+
+        cartItems.forEachIndexed { index, cartItem ->
+            val variation = productVariationMap[index]
+            if (variation != null) {
+                updatedPriceCollections[cartItem.itemId] = Pair(
+                    variation.regular_price.toString(),
+                    cartItem.quantity
+                )
+            }
+        }
+
+        priceCollections = updatedPriceCollections
+
+        // Calculate total amount based on all items in priceCollections
         totalAmount = priceCollections.values.sumOf { (price, quantity) ->
             price.toDoubleOrNull()?.times(quantity) ?: 0.0
         }
@@ -63,7 +95,7 @@ fun OrderDetailsScreen(
 
     val totalQuantity = cartItems.sumOf { it.quantity }
     var selectedPaymentType by remember { mutableStateOf(0) }
-    val productVariationMap by productViewModel.productVariations.collectAsState()
+
     Box(modifier = Modifier
         .fillMaxSize()
         .background(MaterialTheme.colorScheme.background)) {
@@ -75,15 +107,12 @@ fun OrderDetailsScreen(
                 LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
                     items(cartItems.size) { index ->
                         val cartItem = cartItems[index]
-                        productViewModel.fetchProductVariations(cartItem.product.id, index, cartItem.grade, cartItem.color, cartItem.size)
                         if(productVariationMap.isNotEmpty()){
                             val productVariationList = productVariationMap[index]
                             if (productVariationList != null) {
                                 cartItem.price = productVariationList.regular_price.toString()
-                                //  Update priceCollections properly
-                                priceCollections = priceCollections.toMutableMap().apply {
-                                    this[cartItem.itemId] = Pair(cartItem.price, cartItem.quantity)
-                                }
+                                cartItem.variationId= productVariationList.id!!
+                                cartItem.sku= productVariationList.sku.toString()
                             }
                         }
                         ProductDetailItem(cartItem)
@@ -109,11 +138,11 @@ fun OrderDetailsScreen(
                 }
                 LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
                     item {
-                         Text(
+                        Text(
                             text = fullAddress.ifEmpty { "No billing address provided" },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface
-                         )
+                        )
                     }
                 }
             }
@@ -261,7 +290,14 @@ fun ProductDetailItem(cartItem: CartItem) {
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(end = 8.dp)
             )
-            if (cartItem.price.isNotBlank()){
+            if (cartItem.customSize){
+                Text(
+                    text = "₹${cartItem.product.price.toDouble() * cartItem.quantity}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            else if (cartItem.price.isNotBlank()){
                 Text(
                     text = "₹${cartItem.price.toDouble() * cartItem.quantity}",
                     style = MaterialTheme.typography.bodyMedium,
@@ -451,7 +487,8 @@ fun getOrderDetails(
 ): Order {
     val stampDataMap: MutableMap<String, MutableList<StampData>> = mutableMapOf()
     val staffDetails=employeeViewModel.res1.value.data?.employee
-    mainViewModel.cartViewModel.cartItems.value.forEach { cartItem ->
+    val cartItems = mainViewModel.cartViewModel.cartItems.value
+    cartItems.forEach { cartItem ->
         val key = cartItem.itemId.toString()
         val stampData = StampData(
             product_id = cartItem.product.id, // Product ID
@@ -606,7 +643,12 @@ fun getOrderDetails(
             keyValueId = 0
         )
     )
-    val individualLineItems: List<LineItem> = mainViewModel.cartViewModel.cartItems.value.map { cartItem ->
+    val totalOrderAmount = cartItems.sumOf { cartItem ->
+        val itemPrice = cartItem.price.toDoubleOrNull() ?: cartItem.product.price
+        itemPrice * cartItem.quantity
+    }
+    val individualLineItems: List<LineItem> = cartItems.map { cartItem ->
+        val itemPrice = cartItem.price.toDoubleOrNull() ?: cartItem.product.price
         LineItem(
             bundled_by = "",
             bundled_item_title = "",
@@ -644,10 +686,10 @@ fun getOrderDetails(
             ).filter { it.value.toString().isNotBlank() },
             name = cartItem.product.name,
             parent_name = mainViewModel.studentViewModel.studentDetails.value?.parentName.orEmpty(),
-            price = cartItem.product.price,
+            price = itemPrice,
             product_id = cartItem.product.id,
             quantity = cartItem.quantity,
-            sku = " ",
+            sku =cartItem.sku,
             subtotal = "0.00",
             subtotal_tax = "0.00",
             taxes = listOf(
@@ -657,7 +699,7 @@ fun getOrderDetails(
                     total = "0.00"
                 )
             ),
-            total = "${cartItem.product.price * cartItem.quantity}",
+            total = "${itemPrice * cartItem.quantity}",
             total_tax = "0.00",
             variation_id = cartItem.variationId
         )
@@ -704,7 +746,7 @@ fun getOrderDetails(
             ),
             name = productViewModel.productDetails.value?.name ?: "Bundled Products",
             parent_name = mainViewModel.studentViewModel.studentDetails.value?.parentName.orEmpty(),
-            price = mainViewModel.cartViewModel.cartItems.value.sumOf { it.product.price * it.quantity },
+            price =totalOrderAmount,
             product_id = productViewModel.productDetails.value?.id
                 ?: 0,  // Set product_id from CartItem
             quantity = 1,  // Add the total quantity quantity here
@@ -815,7 +857,7 @@ fun getOrderDetails(
                 tax_total = "1.25"
             )
         ),
-        total = "${mainViewModel.cartViewModel.cartItems.value.sumOf { it.product.price * it.quantity }}",
+        total = "$totalOrderAmount",
         total_tax = "1.25",
         transaction_id = ptrnNumber,
         version = "1.0"
