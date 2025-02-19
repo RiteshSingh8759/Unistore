@@ -65,14 +65,14 @@ interface UnistoreApiService {
     ): Response<List<ProductVariationItem>>
     companion object {
 //        Development Server Credentials
-        private const val BASE_URL = "https://wordpress-698237-3902553.cloudwaysapps.com/wp-json/wc/v3/"
-        private const val USERNAME = "ck_aa0034b814776010e00b55e7b6348b0a457537bd"
-        private const val PASSWORD = "cs_9a5e0987cda3c884e9e00ddf0fa25f959c859ecb"
+//        private const val BASE_URL = "https://wordpress-698237-3902553.cloudwaysapps.com/wp-json/wc/v3/"
+//        private const val USERNAME = "ck_aa0034b814776010e00b55e7b6348b0a457537bd"
+//        private const val PASSWORD = "cs_9a5e0987cda3c884e9e00ddf0fa25f959c859ecb"
 
 //        Live Server Credentials
-//        private const val BASE_URL = "https://unistoreindia.com/wp-json/wc/v3/"
-//        private const val USERNAME = "ck_a66c6b54bb458c0e4cbf371e3c79389af9fbb300"
-//        private const val PASSWORD = "cs_1dd07ffc9c11cf071c1634ee791228c9d2df491f"
+        private const val BASE_URL = "https://unistoreindia.com/wp-json/wc/v3/"
+        private const val USERNAME = "ck_a66c6b54bb458c0e4cbf371e3c79389af9fbb300"
+        private const val PASSWORD = "cs_1dd07ffc9c11cf071c1634ee791228c9d2df491f"
 
         fun create(): UnistoreApiService {
             val client = OkHttpClient.Builder()

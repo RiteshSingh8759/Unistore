@@ -2,6 +2,7 @@ package com.kloc.unistore.screens
 
 import com.dokar.sonner.*
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.ui.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.draw.scale
@@ -63,7 +64,7 @@ fun StudentDetailsScreen(
     val nameRegex = ("^\\s*[A-Za-z\u0900-\u097F][A-Za-z\u0900-\u097F.''\\s-]{1,48}[A-Za-z\u0900-\u097F]\\s*$").toRegex()
     val phoneNumberRegex = "^\\s*(?!.*(\\d)\\1{7})[6-9][0-9]{9}\\s*$".toRegex()
     val emailRegex = ("^\\s*[a-zA-Z0-9](?:[a-zA-Z0-9._-]{0,61}[a-zA-Z0-9])?@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.(?:[a-zA-Z]{2,8})\\s*$").toRegex()
-    val addressLineRegex = ("^\\s*[a-zA-Z0-9](?:[a-zA-Z0-9\\s,./\\-_()]{3,298}[a-zA-Z0-9])\\s*$").toRegex()
+    val addressLineRegex = ("^\\s*[a-zA-Z0-9](?:[a-zA-Z0-9\\s,./\\-_()&'\\\";#]{3,298}[a-zA-Z0-9])\\s*$").toRegex()
     val cityRegex = ("^\\s*[A-Za-z][A-Za-z\\s-]{0,48}[A-Za-z]\\s*$").toRegex()
     val stateRegex = ("^\\s*(?i)(Andhra Pradesh|Arunachal Pradesh|Assam|Bihar|Chhattisgarh|Goa|Gujarat|Haryana|Himachal Pradesh|Jharkhand|Karnataka|Kerala|Madhya Pradesh|Maharashtra|Manipur|Meghalaya|Mizoram|Nagaland|Odisha|Punjab|Rajasthan|Sikkim|Tamil Nadu|Telangana|Tripura|Uttar Pradesh|Uttarakhand|West Bengal|Andaman and Nicobar Islands|Chandigarh|Dadra and Nagar Haveli and Daman and Diu|Delhi|Jammu and Kashmir|Ladakh|Lakshadweep|Puducherry)\\s*$").toRegex()
     val zipCodeRegex = ("^\\s*[1-9][0-9]{5}\\s*$").toRegex()
@@ -86,7 +87,6 @@ fun StudentDetailsScreen(
 
     // fetching the school address
     val schoolAddress = employeeViewModel.address.value.data?.address
-
     LaunchedEffect(billingAddressLine1, billingAddressLine2, billingCity, billingState, billingZipCode) {
         mainViewModel.schoolAddress = billingAddressLine1 == schoolAddress?.addressLine1.toString() &&
                 billingAddressLine2 == schoolAddress?.addressLine2.toString()&&

@@ -1,5 +1,4 @@
 package com.kloc.unistore.model.cartViewModel
-
 import androidx.lifecycle.ViewModel
 import com.kloc.unistore.entity.cart.CartItem
 import com.kloc.unistore.entity.product.Product
@@ -7,7 +6,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
-
 @HiltViewModel
 class CartViewModel @Inject constructor() : ViewModel() {
     private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
@@ -33,7 +31,7 @@ class CartViewModel @Inject constructor() : ViewModel() {
     }
     fun updateQuantity(cartItem: CartItem, newQuantity: Int) {
         _cartItems.value = _cartItems.value.map { item ->
-            if (item.product.id == cartItem.product.id && item.size == cartItem.size && item.color == cartItem.color) {
+            if (item.product.id == cartItem.product.id && item.size == cartItem.size && item.color == cartItem.color && item.grade == cartItem.grade) {
                 // Update the quantity of the cart item
                 item.copy(quantity = newQuantity)
             } else {
@@ -43,13 +41,10 @@ class CartViewModel @Inject constructor() : ViewModel() {
     }
     fun removeFromCart(cartItem: CartItem) {
         _cartItems.value = _cartItems.value.filterNot {
-            it.product.id == cartItem.product.id && it.size == cartItem.size && it.color == cartItem.color
+            it.product.id == cartItem.product.id && it.size == cartItem.size && it.color == cartItem.color && it.grade == cartItem.grade
         }
     }
     fun clearCart() {
         _cartItems.value = emptyList()
     }
 }
-
-
-

@@ -21,7 +21,7 @@ interface PineLabsApiService {
     suspend fun getTransactionStatus(
         @Body request: GetCloudBasedTxnStatus
     ): Response<PineLabResponse>
-    @POST("CloudBasedIntegration/V1/CancelTransaction")
+    @POST("CloudBasedIntegration/V1/CancelTransactionForced")
     suspend fun cancelPayment(
         @Body request: GetCloudBasedTxnStatus
     ): Response<PineLabResponse>

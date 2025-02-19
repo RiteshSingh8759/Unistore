@@ -6,5 +6,6 @@ data class GetCloudBasedTxnStatus(
     val PlutusTransactionReferenceID: Int?,
     val SecurityToken: String?,
     val StoreID: String?,
-    val UserID: String?
+    val UserID: String?,
+    val amount: Double
 )

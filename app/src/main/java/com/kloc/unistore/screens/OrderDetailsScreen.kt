@@ -54,17 +54,18 @@ fun OrderDetailsScreen(
     val studentDetails by mainViewModel.studentViewModel.studentDetails.collectAsState()
     // Compute total amount safely
     var totalAmount by remember { mutableStateOf(0.0) }
-    var priceCollections by remember { mutableStateOf(mutableMapOf<Int, Pair<String, Int>>()) }
+    var priceCollections by remember { mutableStateOf(mutableMapOf<String, Pair<String, Int>>()) }
 
     // Fetch product variations for all cart items, regardless of LazyColumn visibility
     LaunchedEffect(cartItems) {
         cartItems.forEachIndexed { index, cartItem ->
+            val sizeToPass = if (cartItem.customSize) "choose from above" else cartItem.size
             productViewModel.fetchProductVariations(
                 cartItem.product.id,
                 index,
                 cartItem.grade,
                 cartItem.color,
-                cartItem.size
+                sizeToPass
             )
         }
     }
@@ -77,21 +78,42 @@ fun OrderDetailsScreen(
 
         cartItems.forEachIndexed { index, cartItem ->
             val variation = productVariationMap[index]
+
+            // Create a conditional variationKey based on available attributes
+            val variationKey = buildString {
+                append(cartItem.product.id) // Always include item ID
+                if(cartItem.size.isNotEmpty() || cartItem.color.isNotEmpty() || cartItem.grade.isNotEmpty()) {
+                    if (!cartItem.size.isNullOrEmpty()) append("-${cartItem.size}")
+                    if (!cartItem.color.isNullOrEmpty()) append("-${cartItem.color}")
+                    if (!cartItem.grade.isNullOrEmpty()) append("-${cartItem.grade}")
+                }
+                else {
+                    append("${cartItem.product.name}") // Ensure this key exists for products without variations
+                }
+            }
+
             if (variation != null) {
-                updatedPriceCollections[cartItem.itemId] = Pair(
+                updatedPriceCollections[variationKey] = Pair(
                     variation.regular_price.toString(),
+                    cartItem.quantity
+                )
+            } else {
+                // Handle cases where there are no variations (like for the belt)
+                updatedPriceCollections[variationKey] = Pair(
+                    cartItem.product.regular_price.toString(), // Use base price for products like belt
                     cartItem.quantity
                 )
             }
         }
 
         priceCollections = updatedPriceCollections
-
         // Calculate total amount based on all items in priceCollections
         totalAmount = priceCollections.values.sumOf { (price, quantity) ->
             price.toDoubleOrNull()?.times(quantity) ?: 0.0
         }
     }
+
+
 
     val totalQuantity = cartItems.sumOf { it.quantity }
     var selectedPaymentType by remember { mutableStateOf(0) }
@@ -201,6 +223,7 @@ fun OrderDetailsScreen(
                 if (totalAmount < 100) {
                     toaster.show(Toast(message = "Payment amount should be atleast 1 rupees", type = ToastType.Error, duration = 2000.milliseconds))
                 } else {
+                    val deviceDetails =employeeViewModel.deviceDetails.value.data?.device
                     PaymentProcessingIndicator(
                         mainViewModel,
                         paymentViewModel,
@@ -213,6 +236,16 @@ fun OrderDetailsScreen(
                             paymentInitiate = false },
                         onCancel = {
                             paymentViewModel.resetPaymentData()
+                            paymentViewModel.cancelPayment(
+                                GetCloudBasedTxnStatus(
+                                UserID = deviceDetails?.user_id,
+                                MerchantID = deviceDetails?.merchant_id,
+                                SecurityToken = deviceDetails?.security_token,
+                                StoreID = deviceDetails?.store_id,
+                                ClientID = deviceDetails?.device_id,
+                                PlutusTransactionReferenceID = mainViewModel.ptrnNumber,
+                                amount = totalAmount
+                            ))
                             paymentInitiate = false },
                         employeeViewModel,
                         navController
@@ -283,6 +316,13 @@ fun ProductDetailItem(cartItem: CartItem) {
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
             }
+            if (cartItem.grade.trim().isNotEmpty()) {
+                Text(
+                    text = "Grade: ${cartItem.grade}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End, modifier = Modifier.wrapContentWidth()) {
             Text(
@@ -290,14 +330,7 @@ fun ProductDetailItem(cartItem: CartItem) {
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(end = 8.dp)
             )
-            if (cartItem.customSize){
-                Text(
-                    text = "₹${cartItem.product.price.toDouble() * cartItem.quantity}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            else if (cartItem.price.isNotBlank()){
+            if (cartItem.price.isNotBlank()){
                 Text(
                     text = "₹${cartItem.price.toDouble() * cartItem.quantity}",
                     style = MaterialTheme.typography.bodyMedium,
@@ -403,7 +436,7 @@ fun PaymentProcessingIndicator(
         // Getting payment Response from Pine Lab machine
         LaunchedEffect(paymentResponse) {
             paymentResponse?.let { response ->
-                ptrnNumber = response.PlutusTransactionReferenceID ?: 0
+                mainViewModel.ptrnNumber = response.PlutusTransactionReferenceID ?: 0
                 if (response.ResponseCode == 0) {
                     pollingAttempts = 0
                     while (pollingAttempts < maxPollingAttempts) {
@@ -414,7 +447,8 @@ fun PaymentProcessingIndicator(
                                 SecurityToken =deviceDetails?.security_token,
                                 StoreID = deviceDetails?.store_id,
                                 ClientID = deviceDetails?.device_id,
-                                PlutusTransactionReferenceID = ptrnNumber
+                                PlutusTransactionReferenceID = mainViewModel.ptrnNumber,
+                                amount = totalAmount
                             )
                         )
                         delay(pollingDelayMillis)
