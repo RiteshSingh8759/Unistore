@@ -62,6 +62,7 @@ fun StudentDetailsScreen(
 
     // Regex for field validation
     val nameRegex = ("^\\s*[A-Za-z\u0900-\u097F][A-Za-z\u0900-\u097F.''\\s-]{1,48}[A-Za-z\u0900-\u097F]\\s*$").toRegex()
+    val classRegex = ("^\\s*[A-Za-z\u0900-\u097F0-9][A-Za-z\u0900-\u097F0-9\\s-]{0,19}\\s*$").toRegex()
     val phoneNumberRegex = "^\\s*(?!.*(\\d)\\1{7})[6-9][0-9]{9}\\s*$".toRegex()
     val emailRegex = ("^\\s*[a-zA-Z0-9](?:[a-zA-Z0-9._-]{0,61}[a-zA-Z0-9])?@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.(?:[a-zA-Z]{2,8})\\s*$").toRegex()
     val addressLineRegex = ("^\\s*[a-zA-Z0-9](?:[a-zA-Z0-9\\s,./\\-_()&'\\\";#]{3,298}[a-zA-Z0-9])\\s*$").toRegex()
@@ -72,17 +73,17 @@ fun StudentDetailsScreen(
     // Form validation for required fields
     val isValidForm =
         studentName.matches(nameRegex) &&
-        parentName.matches(nameRegex) &&
-        phoneNumber.matches(phoneNumberRegex) &&
-        emailAddress.matches(emailRegex) &&
-        ((billingAddressLine1.matches(addressLineRegex) &&
-         (billingAddressLine2.isEmpty() || billingAddressLine2.matches(addressLineRegex)) &&
-          billingCity.matches(cityRegex) &&
-          billingState.matches(stateRegex) &&
-          billingZipCode.matches(zipCodeRegex)) ||
-         mainViewModel.schoolAddress) &&
-        selectedClass.isNotBlank() &&
-        selectedGender.isNotBlank()
+                parentName.matches(nameRegex) &&
+                phoneNumber.matches(phoneNumberRegex) &&
+                emailAddress.matches(emailRegex) &&
+                selectedClass.isNotBlank() && selectedClass.matches(classRegex) &&
+                ((billingAddressLine1.matches(addressLineRegex) &&
+                        (billingAddressLine2.isEmpty() || billingAddressLine2.matches(addressLineRegex)) &&
+                        billingCity.matches(cityRegex) &&
+                        billingState.matches(stateRegex) &&
+                        billingZipCode.matches(zipCodeRegex)) ||
+                        mainViewModel.schoolAddress) &&
+                selectedGender.isNotBlank()
 
 
     // fetching the school address
@@ -140,6 +141,7 @@ fun StudentDetailsScreen(
                     onGenderChange = { selectedGender = it },
                     selectedClass = selectedClass,
                     onClassChange = { selectedClass = it; isClassTouched = true },
+                    isClassError = isClassTouched && !selectedClass.matches(classRegex),
                     isStudentNameError = isStudentNameTouched && !studentName.matches(nameRegex),
                     isParentNameError = isParentNameTouched && !parentName.matches(nameRegex)
                 )
@@ -189,6 +191,7 @@ private fun PersonalInfoSection(
     onGenderChange: (String) -> Unit,
     selectedClass: String,
     onClassChange: (String) -> Unit,
+    isClassError: Boolean,
     isStudentNameError: Boolean,
     isParentNameError: Boolean
 ) {
@@ -234,7 +237,10 @@ private fun PersonalInfoSection(
                     value = selectedClass,
                     onValueChange = onClassChange,
                     label = "Class*",
-                    leadingIcon = { Icon(Icons.Rounded.School, null) }
+                    leadingIcon = { Icon(Icons.Rounded.School, null) },
+                    isError = isClassError,
+                    errorMessage = if (isClassError) classValidationMessage(selectedClass.trim()) else null,
+                    maxLength = 20
                 )
             }
         }
@@ -500,6 +506,13 @@ fun nameValidationMessage(value: String): String? {
     if (value.length < 3) { return "⚠️ Name must be at least 3 characters long" }
     if (value.length > 50) { return "⚠️ Name cannot exceed 50 characters" }
 
+    return null
+}
+fun classValidationMessage(value: String): String? {
+
+    if (value.isBlank()) { return "⚠️ Class cannot be empty" }
+    value.forEach { char -> if (!Regex("^[A-Za-z\u0900-\u097F.'\\s-]").matches(char.toString())) { return "⚠️ Invalid character: '$char'" } }
+    if (value.length > 20) { return "⚠️ Class can't exceed 20 characters" }
     return null
 }
 fun phoneNumberValidationMessage(value: String): String? {

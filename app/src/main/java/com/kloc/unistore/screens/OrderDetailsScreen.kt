@@ -55,7 +55,7 @@ fun OrderDetailsScreen(
     // Compute total amount safely
     var totalAmount by remember { mutableStateOf(0.0) }
     var priceCollections by remember { mutableStateOf(mutableMapOf<String, Pair<String, Int>>()) }
-
+    var allPricesLoaded by remember { mutableStateOf(false) }
     // Fetch product variations for all cart items, regardless of LazyColumn visibility
     LaunchedEffect(cartItems) {
         cartItems.forEachIndexed { index, cartItem ->
@@ -73,12 +73,11 @@ fun OrderDetailsScreen(
     val productVariationMap by productViewModel.productVariations.collectAsState()
 
     // Update price collections when product variations change
-    LaunchedEffect(productVariationMap) {
+    LaunchedEffect(productVariationMap,cartItems) {
         val updatedPriceCollections = priceCollections.toMutableMap()
-
+        var allVariationsLoaded = true
         cartItems.forEachIndexed { index, cartItem ->
             val variation = productVariationMap[index]
-
             // Create a conditional variationKey based on available attributes
             val variationKey = buildString {
                 append(cartItem.product.id) // Always include item ID
@@ -91,18 +90,30 @@ fun OrderDetailsScreen(
                     append("${cartItem.product.name}") // Ensure this key exists for products without variations
                 }
             }
-
+            if (cartItem.size.isNotEmpty() || cartItem.color.isNotEmpty() || cartItem.grade.isNotEmpty()) {
+                if (variation == null) {
+                    allVariationsLoaded = false
+                }
+            }
             if (variation != null) {
                 updatedPriceCollections[variationKey] = Pair(
                     variation.regular_price.toString(),
                     cartItem.quantity
                 )
             } else {
-                // Handle cases where there are no variations (like for the belt)
-                updatedPriceCollections[variationKey] = Pair(
-                    cartItem.product.regular_price.toString(), // Use base price for products like belt
-                    cartItem.quantity
-                )
+                val basePrice = cartItem.product.regular_price.toString()
+                if (basePrice.isNotBlank() && basePrice != "0.0" && basePrice != "0") {
+                    updatedPriceCollections[variationKey] = Pair(basePrice, cartItem.quantity)
+                } else if (cartItem.size.isEmpty() && cartItem.color.isEmpty() && cartItem.grade.isEmpty()) {
+                    // This is a simple product with no variations, but we need to ensure it has a price
+                    updatedPriceCollections[variationKey] = Pair(
+                        cartItem.product.regular_price.toString(),
+                        cartItem.quantity
+                    )
+                } else {
+                    // We're still waiting for a variation with price
+                    allVariationsLoaded = false
+                }
             }
         }
 
@@ -111,6 +122,7 @@ fun OrderDetailsScreen(
         totalAmount = priceCollections.values.sumOf { (price, quantity) ->
             price.toDoubleOrNull()?.times(quantity) ?: 0.0
         }
+        allPricesLoaded = allVariationsLoaded && totalAmount > 0.0 && cartItems.isNotEmpty()
     }
 
 
@@ -211,7 +223,8 @@ fun OrderDetailsScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = MaterialTheme.shapes.medium,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                enabled = allPricesLoaded
             ) {
                 Text("Confirm Your Order", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimary)
             }
@@ -233,20 +246,26 @@ fun OrderDetailsScreen(
                         selectedPaymentType,
                         onComplete = {
                             paymentViewModel.resetPaymentData()
-                            paymentInitiate = false },
-                        onCancel = {
+                            paymentInitiate = false
+                            navController.popBackStack(Screen.SchoolCategoryScreen.route, inclusive = false) },
+                        onCancel = { message ->
                             paymentViewModel.resetPaymentData()
-                            paymentViewModel.cancelPayment(
-                                GetCloudBasedTxnStatus(
-                                UserID = deviceDetails?.user_id,
-                                MerchantID = deviceDetails?.merchant_id,
-                                SecurityToken = deviceDetails?.security_token,
-                                StoreID = deviceDetails?.store_id,
-                                ClientID = deviceDetails?.device_id,
-                                PlutusTransactionReferenceID = mainViewModel.ptrnNumber,
-                                amount = totalAmount
-                            ))
-                            paymentInitiate = false },
+                            paymentInitiate = false
+                            when(message) {
+                                "Payment cancelled" -> {
+                                    toaster.show(Toast(message = message, type = ToastType.Success, duration = 2000.milliseconds))
+                                }
+                                "Transaction not found" -> {
+                                    toaster.show(Toast(message = message, type = ToastType.Warning, duration = 2000.milliseconds))
+                                }
+                                "Payment timeout" -> {
+                                    toaster.show(Toast(message = message, type = ToastType.Warning, duration = 2000.milliseconds))
+                                }
+                                "Payment failed" -> {
+                                    toaster.show(Toast(message = message, type = ToastType.Error, duration = 2000.milliseconds))
+                                }
+                            }
+                        },
                         employeeViewModel,
                         navController
                     )
@@ -357,7 +376,7 @@ fun PaymentProcessingIndicator(
     totalAmount: Double,
     selectedPaymentType: Int,
     onComplete: () -> Unit,
-    onCancel: () -> Unit,
+    onCancel: (String) -> Unit,
     employeeViewModel: EmployeeViewModel,
     navController: NavController,
 ) {
@@ -366,10 +385,9 @@ fun PaymentProcessingIndicator(
     var ptrnNumber by remember { mutableStateOf(0) }
     var createOrder by remember { mutableStateOf(false) }
     var pollingAttempts by remember { mutableStateOf(0) }
-    val maxPollingAttempts = 12
-    val pollingDelayMillis = 5000L
     val paymentResponse by paymentViewModel.paymentResponse.collectAsState()
     val paymentStatus by paymentViewModel.transactionStatus.collectAsState()
+    val paymentCancelStatus by paymentViewModel.cancelStatus.collectAsState()
     var orderId by remember { mutableStateOf(0) }
     val transactionNumber by remember { mutableStateOf(generateTransactionNumber()) }
     val waitingTime by remember { mutableStateOf(when (selectedPaymentType) {
@@ -377,18 +395,37 @@ fun PaymentProcessingIndicator(
         10 -> 5
         else -> 2
     }) }
+    val maxPollingAttempts = 12*waitingTime
+    val pollingDelayMillis = 5000L
     var remainingTime by remember { mutableStateOf(waitingTime * 60) }
     var currentAnimation by remember { mutableStateOf("Payment Processing") }
     val deviceDetails =employeeViewModel.deviceDetails.value.data?.device
     // Showing Animations
     when (currentAnimation) {
-        "Payment Processing" -> CommonProgressIndicator(message = "Processing Payment\nRemaining Time: ${String.format("%02d:%02d", remainingTime / 60, remainingTime % 60)}", buttonName = "Cancel Payment", dotAnimation = false) { onCancel() }
+        "Payment Processing" -> CommonProgressIndicator(message = "Processing Payment\nRemaining Time: ${String.format("%02d:%02d", remainingTime / 60, remainingTime % 60)}", buttonName = "Cancel Payment", dotAnimation = false) {
+            paymentViewModel.cancelPayment(
+                GetCloudBasedTxnStatus(
+                    UserID = deviceDetails?.user_id,
+                    MerchantID = deviceDetails?.merchant_id,
+                    SecurityToken = deviceDetails?.security_token,
+                    StoreID = deviceDetails?.store_id,
+                    ClientID = deviceDetails?.device_id,
+                    PlutusTransactionReferenceID = mainViewModel.ptrnNumber,
+                    amount = totalAmount*100
+                )
+            )
+        }
         "Payment Successful Creating Order" -> CommonProgressIndicator("Payment Successful!\nCreating Order")
         "Payment Successful Order Created" -> SuccessfulAnimation("Order Created!\nOrder Id: $orderId") {
             onComplete()
-            navController.popBackStack(Screen.SchoolCategoryScreen.route, inclusive = false)
         }
-        else -> onCancel()
+        "Payment Cancelled" -> {
+            onCancel("Payment cancelled")
+        }
+        "Transaction Not Found" -> {
+            onCancel("Transaction not found")
+        }
+        else -> onCancel("")
     }
     // Creating Order And insuring order create once only
     if (createOrder) {
@@ -410,7 +447,7 @@ fun PaymentProcessingIndicator(
             if (remainingTime > 0) {
                 delay(1000L)
                 remainingTime -= 1
-            } else { onCancel() }
+            } else { onCancel("Payment timeout") }
         }
         // Sending request to Pine Lab machine for payment
         LaunchedEffect(Unit) {
@@ -455,12 +492,10 @@ fun PaymentProcessingIndicator(
                         pollingAttempts++
                     }
                     if (paymentViewModel.transactionStatus.value?.ResponseCode == 1001 && pollingAttempts >= maxPollingAttempts) {
-                        toaster.show(Toast(message = "Timed out.", type = ToastType.Warning, duration = 2000.milliseconds))
-                        onCancel()
+                        onCancel("Payment timeout")
                     }
                 } else {
-                    toaster.show(Toast(message = "Payment failed", type = ToastType.Error, duration = 2000.milliseconds))
-                    onCancel()
+                    onCancel("Payment failed")
                 }
             }
         }
@@ -474,6 +509,18 @@ fun PaymentProcessingIndicator(
                     }
                     "PLEASE APPROVE OPEN TXN FIRST" -> {
                         toaster.show(Toast(message = "Please complete all previous transaction first", type = ToastType.Warning, duration = 2000.milliseconds))
+                    }
+                }
+            }
+        }
+        LaunchedEffect(paymentCancelStatus) {
+            paymentCancelStatus?.let { status ->
+                when (status.ResponseMessage.toString()) {
+                    "APPROVED" -> {
+                        currentAnimation = "Payment Cancelled"
+                    }
+                    "TRANSACTION NOT FOUND" -> {
+                        currentAnimation = "Transaction Not Found"
                     }
                 }
             }

@@ -283,8 +283,8 @@ fun SignInScreen(navController: NavController, employeeViewModel: EmployeeViewMo
                                                     Regards,
                                                     Unipro Team
                                                 """.trimIndent(),
-                                        fromEmail = "ritesh.singh@kloctechnologies.com",
-                                        password = "xjwfxiseksaouxue"
+                                        fromEmail = "fabunipro24@gmail.com",
+                                        password = "miiaiawwlekzcrri"
                                     )
                                     withContext(Dispatchers.Main) {
                                         toaster.show(Toast(message =  "OTP Sent to your email.", type = ToastType.Success, duration = 2000.milliseconds))

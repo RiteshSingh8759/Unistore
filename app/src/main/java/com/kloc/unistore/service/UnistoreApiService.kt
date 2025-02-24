@@ -31,12 +31,15 @@ interface UnistoreApiService {
     ): Response<List<SchoolCategory>>
     @GET("products/categories")
     suspend fun getCategoriesByParent(
-        @Query("parent") parentId: Int): Response<List<Category>>
+        @Query("parent") parentId: Int,
+        @Query("per_page") perPage: Int = 100,
+    ): Response<List<Category>>
 
     @GET("products")
     suspend fun getProductsByCategory(
         @Query("category") categoryId: Int,
-        @Query("type") type: String
+        @Query("type") type: String,
+        @Query("per_page") perPage: Int = 100
     ): Response<List<Product>>
 
     @GET("products/{id}")
@@ -51,7 +54,8 @@ interface UnistoreApiService {
 
     @GET("products")
     suspend fun getProductsByIds(
-        @Query("include") include: String
+        @Query("include") include: String,
+        @Query("per_page") perPage: Int = 100
     ): Response<List<Product>>
     @GET("products/{id}/variations")
     suspend fun getAllProductVariations(
